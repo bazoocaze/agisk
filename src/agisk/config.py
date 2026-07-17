@@ -29,26 +29,14 @@ def _ensure_config(base_dir: Path) -> Path:
     return config_path
 
 
-def load_config() -> dict[str, Any]:
-    """Load the config.json.
+def load_config(base_dir: Path | None = None) -> dict[str, Any]:
+    """Load the config.json from <base_dir>/config.json.
 
-    Priority:
-    1. $AGISK_CONFIG -> custom JSON file
-    2. <base_dir>/config.json
+    Creates a default config if the file does not exist.
     """
-    config_source = os.environ.get("AGISK_CONFIG")
-    if config_source:
-        config_path = Path(config_source)
-        if not config_path.exists():
-            # If AGISK_CONFIG was explicitly set, create the config
-            config_path.parent.mkdir(parents=True, exist_ok=True)
-            cfg = _default_config()
-            config_path.write_text(json.dumps(cfg, indent=2) + "\n")
-            config_path.chmod(0o600)
-    else:
-        base_dir = _default_base_dir()
-        config_path = _ensure_config(base_dir)
-
+    if base_dir is None:
+        base_dir = get_base_dir()
+    config_path = _ensure_config(base_dir)
     return json.loads(config_path.read_text())
 
 
@@ -69,22 +57,12 @@ def get_base_dir() -> Path:
 def get_skills_dir(base_dir: Path | None = None, config: dict[str, Any] | None = None) -> Path:
     """Resolve the global skills directory.
 
-    Priority:
-    1. $AGISK_SKILLS_DIR (absolute or relative to CWD)
-    2. Config: skills_dir (relative to base_dir, or absolute if starting with /)
-    3. <base_dir>/skills/
+    Reads from config > fallback <base_dir>/skills/.
     """
-    env_skills = os.environ.get("AGISK_SKILLS_DIR")
-    if env_skills:
-        p = Path(env_skills)
-        if p.is_absolute():
-            return p
-        return Path.cwd() / p
-
     if base_dir is None:
         base_dir = get_base_dir()
     if config is None:
-        config = load_config()
+        config = load_config(base_dir)
 
     skills_dir_str = config.get("skills_dir", "skills")
     p = Path(skills_dir_str)

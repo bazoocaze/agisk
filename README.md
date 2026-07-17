@@ -96,8 +96,6 @@ The configuration file is at `<base_dir>/config.json` (default: `~/.agisk/config
 | Variable | Description |
 |----------|-------------|
 | `AGISK_BASE_DIR` | Base directory (fallback: `~/.agisk/`) |
-| `AGISK_SKILLS_DIR` | Global skills directory |
-| `AGISK_CONFIG` | Path to JSON configuration file |
 
 ### Resolution priority
 

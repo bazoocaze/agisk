@@ -77,16 +77,16 @@ for skill in active_skills:
 
 ### 4. Detecting Skills via Environment or Config
 
-Agents can also discover the global skills directory via environment variables:
+Agents can also discover the global skills directory via the environment variable:
 
-- `AGISK_SKILLS_DIR` — custom global skills location
-- `AGISK_BASE_DIR` — custom base directory
+- `AGISK_BASE_DIR` — custom base directory (default: `~/.agisk/`)
 
 ```python
 import os
 from pathlib import Path
 
-skills_dir = Path(os.environ.get("AGISK_SKILLS_DIR", Path.home() / ".agisk" / "skills"))
+base_dir = Path(os.environ.get("AGISK_BASE_DIR", Path.home() / ".agisk"))
+skills_dir = base_dir / "skills"
 ```
 
 ## Recommended Agent Integration Patterns

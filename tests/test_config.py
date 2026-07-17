@@ -19,57 +19,14 @@ def test_default_base_dir():
     assert _default_base_dir() == Path.home() / ".agisk"
 
 
-def test_load_config_creates_default(tmp_path: Path):
-    """load_config() should create a default config if it does not exist."""
-    config_path = tmp_path / "agisk-config.json"
-    # Config does not exist yet
-    old_env = os.environ.get("AGISK_CONFIG")
-    try:
-        os.environ["AGISK_CONFIG"] = str(config_path)
-        config = load_config()
-        assert config == {"skills_dir": "skills", "link_target_dir": ".agent/skills"}
-        assert config_path.exists()
-    finally:
-        if old_env is None:
-            del os.environ["AGISK_CONFIG"]
-        else:
-            os.environ["AGISK_CONFIG"] = old_env
-
-
-def test_load_config_custom_file(tmp_path: Path):
-    """load_config() with AGISK_CONFIG pointing to a custom JSON."""
-    config_path = tmp_path / "custom-config.json"
-    config_path.write_text(json.dumps({
-        "skills_dir": "/tmp/my-skills",
-        "link_target_dir": ".custom/skills",
-    }))
-    old_env = os.environ.get("AGISK_CONFIG")
-    try:
-        os.environ["AGISK_CONFIG"] = str(config_path)
-        config = load_config()
-        assert config["skills_dir"] == "/tmp/my-skills"
-        assert config["link_target_dir"] == ".custom/skills"
-    finally:
-        if old_env is None:
-            del os.environ["AGISK_CONFIG"]
-        else:
-            os.environ["AGISK_CONFIG"] = old_env
-
-
-def test_load_config_file_not_found(tmp_path: Path):
-    """load_config() with AGISK_CONFIG is created if it does not exist, no error."""
-    config_path = tmp_path / "nonexistent" / "config.json"
-    old_env = os.environ.get("AGISK_CONFIG")
-    try:
-        os.environ["AGISK_CONFIG"] = str(config_path)
-        config = load_config()
-        assert config == {"skills_dir": "skills", "link_target_dir": ".agent/skills"}
-        assert config_path.exists()
-    finally:
-        if old_env is None:
-            del os.environ["AGISK_CONFIG"]
-        else:
-            os.environ["AGISK_CONFIG"] = old_env
+def test_load_config_creates_default(monkeypatch, tmp_path: Path):
+    """load_config() should create a default config in base_dir if it does not exist."""
+    monkeypatch.setenv("AGISK_BASE_DIR", str(tmp_path))
+    config = load_config()
+    assert config == {"skills_dir": "skills", "link_target_dir": ".agent/skills"}
+    config_path = tmp_path / "config.json"
+    assert config_path.exists()
+    assert config_path.read_text().strip().endswith('}')
 
 
 def test_get_base_dir_env(monkeypatch, tmp_path: Path):
@@ -82,24 +39,6 @@ def test_get_base_dir_default(monkeypatch):
     monkeypatch.delenv("AGISK_BASE_DIR", raising=False)
     result = get_base_dir()
     assert result == Path.home() / ".agisk"
-
-
-def test_get_skills_dir_env_absolute(monkeypatch, tmp_path: Path):
-    skills_path = tmp_path / "my-skills"
-    monkeypatch.setenv("AGISK_SKILLS_DIR", str(skills_path))
-    result = get_skills_dir()
-    assert result == skills_path.resolve()
-
-
-def test_get_skills_dir_env_relative(monkeypatch, tmp_path: Path):
-    old_cwd = Path.cwd()
-    try:
-        os.chdir(tmp_path)
-        monkeypatch.setenv("AGISK_SKILLS_DIR", "my-skills")
-        result = get_skills_dir()
-        assert result == (tmp_path / "my-skills").resolve()
-    finally:
-        os.chdir(old_cwd)
 
 
 def test_get_skills_dir_from_config(tmp_path: Path):
