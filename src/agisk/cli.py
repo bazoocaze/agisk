@@ -115,16 +115,54 @@ def main() -> None:
             if not all_skills:
                 print("No skills available.", file=sys.stderr)
                 sys.exit(1)
-            choices = [s.name for s in all_skills]
+
+            # Pre-populate based on currently linked skills
+            linked = linked_skills(link_target_dir)
+            linked_names = {l.name for l in linked}
+
+            choices = [
+                questionary.Choice(
+                    title=s.name,
+                    value=s.name,
+                    checked=s.name in linked_names,
+                )
+                for s in all_skills
+            ]
+
             selected = questionary.checkbox(
                 "Select skills to enable:",
                 choices=choices,
-                instruction="(space to select, enter to confirm)",
+                instruction="(space to toggle, enter to confirm)",
             ).ask()
-            if not selected:
-                print("No skills selected.")
+            if selected is None:
+                print("Cancelled.")
                 sys.exit(0)
-            skill_names = list(selected)
+
+            selected_names = set(selected)
+
+            # Enable newly selected skills
+            for skill_name in selected_names - linked_names:
+                try:
+                    result = enable_skill(
+                        skill_name, skills_dir, link_target_dir, force=force
+                    )
+                    if result:
+                        print(f"Link created: {skill_name}")
+                except (FileNotFoundError, NotADirectoryError, ValueError) as e:
+                    print(f"Error enabling '{skill_name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            # Disable skills that were deselected
+            for skill_name in linked_names - selected_names:
+                try:
+                    result = disable_skill(skill_name, link_target_dir)
+                    if result:
+                        print(f"Link removed: {skill_name}")
+                except (ValueError, FileNotFoundError) as e:
+                    print(f"Error disabling '{skill_name}': {e}", file=sys.stderr)
+                    sys.exit(1)
+
+            sys.exit(0)
 
         if not skill_names:
             print("Error: use/enable requires at least one skill", file=sys.stderr)

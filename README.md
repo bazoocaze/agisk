@@ -21,8 +21,15 @@ pip install git+https://github.com/usuario/agisk
 
 Creates symbolic link(s) of the skill(s) in the current project.
 
+**Interactive mode** (no arguments, TTY): opens a checkbox listing all available
+skills, pre-populated with currently linked ones. Toggle with space, confirm with
+enter — links are created/removed accordingly.
+
 ```bash
-# Link a skill
+# Interactive mode — select skills via checkbox
+agisk use
+
+# Link specific skill(s)
 agisk use my-coding-skill
 agisk enable my-coding-skill
 

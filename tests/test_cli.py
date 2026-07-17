@@ -172,7 +172,9 @@ class TestUseEnableInteractive:
         monkeypatch.setattr(questionary, "checkbox", _fake_checkbox)
 
         from agisk.cli import main
-        main()
+        with pytest.raises(SystemExit) as exc:
+            main()
+        assert exc.value.code == 0
         captured = capsys.readouterr()
         assert "Link created: skill-a" in captured.out
         assert (project / ".agent" / "skills" / "skill-a").is_symlink()
@@ -213,7 +215,7 @@ class TestUseEnableInteractive:
             main()
         assert exc.value.code == 0
         captured = capsys.readouterr()
-        assert "No skills selected." in captured.out
+        assert "Cancelled." in captured.out
         assert not (project / ".agent" / "skills" / "skill-a").exists()
 
     def test_interactive_not_tty_uses_args(self, capsys, monkeypatch, tmp_path):

@@ -6,6 +6,23 @@ This document explains how AI coding agents (like **pi**, Claude Code, Cline, Ai
 
 When working on this project, always write commit messages in **English**.
 
+### Version Management
+
+The project version is defined in `pyproject.toml` (under `[project]`, field `version`).
+This version is used by `uv tool install` and `uv tool upgrade` to detect updates.
+
+**Before making any change that will be released or committed**, ask the user:
+- Whether the version should be incremented
+- Which part to bump (major, minor, or patch)
+
+If the user says "yes" or specifies a level, update the `version` field in `pyproject.toml`
+according to [Semantic Versioning](https://semver.org/):
+- **patch** (0.1.0 → 0.1.1): bug fixes and minor tweaks
+- **minor** (0.1.0 → 0.2.0): new features, backward compatible
+- **major** (1.0.0 → 2.0.0): breaking changes
+
+Do not bump the version without user confirmation.
+
 ---
 
 ## Overview
