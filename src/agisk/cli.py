@@ -4,6 +4,8 @@ import argparse
 import sys
 from pathlib import Path
 
+import questionary
+
 from .config import get_base_dir, get_skills_dir, get_link_target_dir, load_config
 from .install import install_from_path
 from .skills import enable_skill, disable_skill, list_skills, linked_skills
@@ -106,10 +108,29 @@ def main() -> None:
 
     # --- use / enable ---
     if sub in ("use", "enable"):
-        if not args.args:
+        skill_names = args.args
+        if not skill_names and sys.stdin.isatty():
+            # Interactive mode: let user select skills via checkbox
+            all_skills = list_skills(skills_dir)
+            if not all_skills:
+                print("No skills available.", file=sys.stderr)
+                sys.exit(1)
+            choices = [s.name for s in all_skills]
+            selected = questionary.checkbox(
+                "Select skills to enable:",
+                choices=choices,
+                instruction="(space to select, enter to confirm)",
+            ).ask()
+            if not selected:
+                print("No skills selected.")
+                sys.exit(0)
+            skill_names = list(selected)
+
+        if not skill_names:
             print("Error: use/enable requires at least one skill", file=sys.stderr)
             sys.exit(1)
-        for skill_name in args.args:
+
+        for skill_name in skill_names:
             try:
                 result = enable_skill(skill_name, skills_dir, link_target_dir, force=force)
                 if result:

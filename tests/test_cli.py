@@ -111,3 +111,126 @@ def test_parser_help(capsys):
     assert "install" in captured.out
     assert "list" in captured.out
     assert "linked" in captured.out
+
+
+class TestUseEnableInteractive:
+    """Tests for the interactive use/enable mode (no args, TTY)."""
+
+    def test_interactive_no_skills_available(self, capsys, monkeypatch, tmp_path):
+        """When no skills exist globally, show error."""
+        monkeypatch.setattr("sys.argv", ["agisk", "use"])
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        base_dir = tmp_path / ".agisk"
+        base_dir.mkdir()
+        (base_dir / "config.json").write_text(
+            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+        )
+        (base_dir / "skills").mkdir()
+
+        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+
+        with pytest.raises(SystemExit) as exc:
+            from agisk.cli import main
+            main()
+        assert exc.value.code == 1
+        captured = capsys.readouterr()
+        assert "No skills available" in captured.err
+
+    def test_interactive_select_and_enable(self, capsys, monkeypatch, tmp_path):
+        """Select skills via checkbox and enable them."""
+        base_dir = tmp_path / ".agisk"
+        base_dir.mkdir()
+        (base_dir / "config.json").write_text(
+            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+        )
+        skills_dir = base_dir / "skills"
+        skills_dir.mkdir()
+        (skills_dir / "skill-a").mkdir()
+        (skills_dir / "skill-b").mkdir()
+
+        # Create a project dir with .agent/skills
+        project = tmp_path / "project"
+        project.mkdir()
+        (project / ".agent" / "skills").mkdir(parents=True)
+        monkeypatch.chdir(project)
+
+        monkeypatch.setattr("sys.argv", ["agisk", "use"])
+        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        # Mock questionary to simulate user selecting skill-a
+        import questionary
+
+        def _fake_checkbox(*args, **kwargs):
+            class FakeResult:
+                @staticmethod
+                def ask():
+                    return ["skill-a"]
+            return FakeResult()
+
+        monkeypatch.setattr(questionary, "checkbox", _fake_checkbox)
+
+        from agisk.cli import main
+        main()
+        captured = capsys.readouterr()
+        assert "Link created: skill-a" in captured.out
+        assert (project / ".agent" / "skills" / "skill-a").is_symlink()
+
+    def test_interactive_cancel_selection(self, capsys, monkeypatch, tmp_path):
+        """When user cancels (None/empty), exit cleanly."""
+        base_dir = tmp_path / ".agisk"
+        base_dir.mkdir()
+        (base_dir / "config.json").write_text(
+            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+        )
+        skills_dir = base_dir / "skills"
+        skills_dir.mkdir()
+        (skills_dir / "skill-a").mkdir()
+
+        project = tmp_path / "project"
+        project.mkdir()
+        (project / ".agent" / "skills").mkdir(parents=True)
+        monkeypatch.chdir(project)
+
+        monkeypatch.setattr("sys.argv", ["agisk", "use"])
+        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+
+        import questionary
+
+        def _fake_cancel(*args, **kwargs):
+            class FakeResult:
+                @staticmethod
+                def ask():
+                    return None
+            return FakeResult()
+
+        monkeypatch.setattr(questionary, "checkbox", _fake_cancel)
+
+        from agisk.cli import main
+        with pytest.raises(SystemExit) as exc:
+            main()
+        assert exc.value.code == 0
+        captured = capsys.readouterr()
+        assert "No skills selected." in captured.out
+        assert not (project / ".agent" / "skills" / "skill-a").exists()
+
+    def test_interactive_not_tty_uses_args(self, capsys, monkeypatch, tmp_path):
+        """When stdin is not a TTY and no args, should error (not enter interactive)."""
+        monkeypatch.setattr("sys.argv", ["agisk", "use"])
+        monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+
+        base_dir = tmp_path / ".agisk"
+        base_dir.mkdir()
+        (base_dir / "config.json").write_text(
+            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+        )
+        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+
+        with pytest.raises(SystemExit) as exc:
+            from agisk.cli import main
+            main()
+        assert exc.value.code == 1
+        captured = capsys.readouterr()
+        assert "requires at least one skill" in captured.err
