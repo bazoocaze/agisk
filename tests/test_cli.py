@@ -87,14 +87,14 @@ def test_parser_verbose_long():
 
 
 def test_parser_no_args():
-    """Sem argumentos, o parser aceita (subcommand=None)."""
+    """With no arguments, the parser accepts (subcommand=None)."""
     parser = build_parser()
     args = parser.parse_args([])
     assert args.subcommand is None
 
 
 def test_parser_unknown_subcommand():
-    """Subcomando desconhecido deve ser aceito pelo parser mas tratado depois."""
+    """Unknown subcommand should be accepted by the parser but handled later."""
     parser = build_parser()
     args = parser.parse_args(["unknown", "arg"])
     assert args.subcommand == "unknown"

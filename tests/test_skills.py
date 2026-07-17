@@ -79,7 +79,7 @@ class TestEnableSkill:
     def test_creates_link_dir(self, tmp_skills_dir: Path, tmp_path: Path):
         (tmp_skills_dir / "my-skill").mkdir()
         link_dir = tmp_path / "links"
-        # link_dir não existe ainda
+        # link_dir does not exist yet
         result = enable_skill("my-skill", tmp_skills_dir, link_dir)
         assert result is True
         assert link_dir.exists()
@@ -95,7 +95,7 @@ class TestEnableSkill:
         link_dir = tmp_path / "links"
         link_dir.mkdir()
         enable_skill("my-skill", tmp_skills_dir, link_dir)
-        # Segunda vez sem --force retorna False
+        # Second time without --force returns False
         result = enable_skill("my-skill", tmp_skills_dir, link_dir)
         assert result is False
 

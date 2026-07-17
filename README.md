@@ -1,62 +1,62 @@
 # agisk
 
-**agisk** (Agent + Skills) — Gerenciador de links simbólicos para skills de agentes.
+**agisk** (Agent + Skills) — Symbolic link manager for agent skills.
 
-Permite gerenciar skills de agentes de forma centralizada, com instalação, listagem e
-ativação via links simbólicos.
+Allows managing agent skills in a centralized way, with installation, listing, and
+activation via symbolic links.
 
-## Instalação
+## Installation
 
 ```bash
-# Via uv (recomendado)
+# Via uv (recommended)
 uv tool install git+https://github.com/usuario/agisk
 
-# Ou via pip
+# Or via pip
 pip install git+https://github.com/usuario/agisk
 ```
 
-## Comandos
+## Commands
 
 ### `agisk use|enable <skill> [<skill> ...]`
 
-Cria link(s) simbólico(s) da(s) skill(s) no projeto atual.
+Creates symbolic link(s) of the skill(s) in the current project.
 
 ```bash
-# Linkar uma skill
+# Link a skill
 agisk use my-coding-skill
 agisk enable my-coding-skill
 
-# Múltiplas skills de uma vez
+# Multiple skills at once
 agisk use skill-a skill-b skill-c
 ```
 
 ### `agisk disable <skill> [<skill> ...]`
 
-Remove link(s) simbólico(s) da(s) skill(s).
+Removes symbolic link(s) of the skill(s).
 
 ```bash
 agisk disable my-coding-skill
 agisk disable skill-a skill-b
 ```
 
-### `agisk install <caminho>`
+### `agisk install <path>`
 
-Instala uma skill no diretório global de skills.
+Installs a skill into the global skills directory.
 
-- Se for um **diretório**: deve conter `SKILL.md`. Copia o diretório inteiro.
-- Se for um **arquivo SKILL.md**: extrai o campo `name` do frontmatter YAML.
+- If it is a **directory**: it must contain `SKILL.md`. Copies the entire directory.
+- If it is a `SKILL.md` **file**: extracts the `name` field from the YAML frontmatter.
 
 ```bash
-# Instalar a partir de um diretório
-agisk install ~/projetos/minha-skill
+# Install from a directory
+agisk install ~/projects/my-skill
 
-# Instalar a partir de um arquivo SKILL.md
+# Install from a SKILL.md file
 agisk install ~/Downloads/SKILL.md
 ```
 
 ### `agisk list`
 
-Lista as skills disponíveis no diretório global.
+Lists the skills available in the global directory.
 
 ```bash
 agisk list
@@ -64,7 +64,7 @@ agisk list
 
 ### `agisk linked`
 
-Lista as skills atualmente linkadas no projeto atual.
+Lists the skills currently linked in the current project.
 
 ```bash
 agisk linked
@@ -72,17 +72,17 @@ agisk linked
 
 ## Flags
 
-| Flag | Descrição |
-|------|-----------|
-| `--base-dir DIR` | Diretório base (prioridade sobre `$AGISK_BASE_DIR`) |
-| `--force` | Sobrescrever sem perguntar |
-| `--verbose`, `-v` | Saída detalhada |
+| Flag | Description |
+|------|-------------|
+| `--base-dir DIR` | Base directory (takes precedence over `$AGISK_BASE_DIR`) |
+| `--force` | Overwrite without asking |
+| `--verbose`, `-v` | Verbose output |
 
-## Configuração
+## Configuration
 
-### Arquivo de configuração
+### Configuration file
 
-O arquivo de configuração fica em `<base_dir>/config.json` (padrão: `~/.agisk/config.json`).
+The configuration file is at `<base_dir>/config.json` (default: `~/.agisk/config.json`).
 
 ```json
 {
@@ -91,60 +91,60 @@ O arquivo de configuração fica em `<base_dir>/config.json` (padrão: `~/.agisk
 }
 ```
 
-### Variáveis de ambiente
+### Environment variables
 
-| Variável | Descrição |
-|----------|-----------|
-| `AGISK_BASE_DIR` | Diretório base (fallback: `~/.agisk/`) |
-| `AGISK_SKILLS_DIR` | Diretório global de skills |
-| `AGISK_CONFIG` | Caminho para arquivo JSON de configuração |
+| Variable | Description |
+|----------|-------------|
+| `AGISK_BASE_DIR` | Base directory (fallback: `~/.agisk/`) |
+| `AGISK_SKILLS_DIR` | Global skills directory |
+| `AGISK_CONFIG` | Path to JSON configuration file |
 
-### Prioridade de resolução
+### Resolution priority
 
 1. `--base-dir` (flag)
-2. `$AGISK_BASE_DIR` (variável de ambiente)
+2. `$AGISK_BASE_DIR` (environment variable)
 3. `~/.agisk/` (fallback)
 
-## Estrutura de Diretórios
+## Directory Structure
 
 ```
-~/.agisk/                  # Diretório base
-├── skills/                # Diretório global de skills
+~/.agisk/                  # Base directory
+├── skills/                # Global skills directory
 │   ├── my-skill-1/
 │   │   ├── SKILL.md
 │   │   └── ...
 │   └── my-skill-2/
 │       ├── SKILL.md
 │       └── ...
-└── config.json            # Configuração da ferramenta
+└── config.json            # Tool configuration
 ```
 
 ```
-meu-projeto/               # Projeto atual ($PWD)
+my-project/                # Current project ($PWD)
 └── .agent/
-    └── skills/            # Links simbólicos (criados por agisk use)
+    └── skills/            # Symbolic links (created by agisk use)
         ├── my-skill-1 -> ~/.agisk/skills/my-skill-1
         └── my-skill-2 -> ~/.agisk/skills/my-skill-2
 ```
 
-## Formato SKILL.md
+## SKILL.md Format
 
 ```markdown
 ---
 name: my-skill
-description: Descrição da skill
+description: Skill description
 version: 1
 ---
 
 # My Skill
 
-Conteúdo da skill...
+Skill content...
 ```
 
-O campo `name` no frontmatter é usado pelo `agisk install` para nomear o diretório
-da skill quando instalada a partir de um arquivo `SKILL.md` avulso.
+The `name` field in the frontmatter is used by `agisk install` to name the skill
+directory when installed from a standalone `SKILL.md` file.
 
-## Desenvolvimento
+## Development
 
 ```bash
 git clone https://github.com/usuario/agisk
@@ -154,6 +154,6 @@ uv pip install -e .
 pytest tests/
 ```
 
-## Licença
+## License
 
 MIT

@@ -8,22 +8,22 @@ from .yaml import get_skill_name_from_skillmd
 
 
 def _validate_no_path_traversal(name: str) -> None:
-    """Valida nome contra path traversal."""
+    """Validate name against path traversal."""
     if not name or name.strip() == "":
-        raise ValueError("Nome da skill não pode ser vazio")
+        raise ValueError("Skill name cannot be empty")
     if "/" in name or "\\" in name or ".." in name:
         raise ValueError(
-            f"Nome de skill inválido (path traversal detectado): {name}"
+            f"Invalid skill name (path traversal detected): {name}"
         )
 
 
 def _prompt_overwrite(name: str) -> bool:
-    """Pergunta interativamente se quer sobrescrever."""
+    """Interactively ask if user wants to overwrite."""
     try:
-        resposta = input(
-            f"Skill '{name}' já existe. Sobrescrever? [s/N] "
+        answer = input(
+            f"Skill '{name}' already exists. Overwrite? [y/N] "
         )
-        return resposta.strip().lower() in ("s", "sim", "y", "yes")
+        return answer.strip().lower() in ("y", "yes")
     except (EOFError, KeyboardInterrupt):
         return False
 
@@ -34,41 +34,41 @@ def install_from_path(
     force: bool = False,
     interactive: bool = True,
 ) -> bool:
-    """Instala uma skill a partir de um diretório ou arquivo SKILL.md.
+    """Install a skill from a directory or SKILL.md file.
 
     Args:
-        path: Caminho para o diretório (com SKILL.md dentro) ou arquivo SKILL.md.
-        skills_dir: Diretório global de skills.
-        force: Se True, sobrescreve sem perguntar.
-        interactive: Se True, pergunta interativamente antes de sobrescrever.
+        path: Path to the directory (with SKILL.md inside) or SKILL.md file.
+        skills_dir: Global skills directory.
+        force: If True, overwrite without asking.
+        interactive: If True, interactively ask before overwriting.
 
     Returns:
-        True se instalou com sucesso, False se cancelado.
+        True if installed successfully, False if cancelled.
 
     Raises:
-        FileNotFoundError: Se o path não existe.
-        ValueError: Se o path é um symlink, ou nome inválido.
-        NotADirectoryError: Se path é diretório sem SKILL.md.
+        FileNotFoundError: If the path does not exist.
+        ValueError: If the path is a symlink, or invalid name.
+        NotADirectoryError: If path is a directory without SKILL.md.
     """
     src_path = Path(path)
 
-    # Verificar symlink ANTES de resolver
+    # Check symlink BEFORE resolving
     if src_path.is_symlink():
         raise ValueError(
-            f"Não é permitido instalar a partir de um symlink: {src_path}"
+            f"Installing from a symlink is not allowed: {src_path}"
         )
 
     src = src_path.resolve()
 
     if not src.exists():
-        raise FileNotFoundError(f"Caminho não encontrado: {src}")
+        raise FileNotFoundError(f"Path not found: {src}")
 
     if src.is_dir():
         return _install_from_directory(src, skills_dir, force, interactive)
     elif src.is_file():
         return _install_from_file(src, skills_dir, force, interactive)
     else:
-        raise ValueError(f"Tipo de caminho não suportado: {src}")
+        raise ValueError(f"Unsupported path type: {src}")
 
 
 def _install_from_directory(
@@ -77,28 +77,28 @@ def _install_from_directory(
     force: bool,
     interactive: bool,
 ) -> bool:
-    """Instala a partir de um diretório que contém SKILL.md."""
+    """Install from a directory that contains SKILL.md."""
     skill_md = src / "SKILL.md"
     if not skill_md.exists():
         raise NotADirectoryError(
-            f"Diretório não contém SKILL.md: {src}"
+            f"Directory does not contain SKILL.md: {src}"
         )
 
     name = src.name
     _validate_no_path_traversal(name)
-    # Valida também se o nome do diretório em si contém path traversal
+    # Also validate that the directory name itself contains path traversal
     if ".." in src.name or src.name.startswith("/"):
         raise ValueError(
-            f"Nome de skill inválido (path traversal detectado): {src.name}"
+            f"Invalid skill name (path traversal detected): {src.name}"
         )
     target = (skills_dir / name).resolve()
 
-    # Verifica se já existe
+    # Check if already exists
     if target.exists():
         if not force:
             if not interactive or not _prompt_overwrite(name):
                 return False
-        # Remove existente
+        # Remove existing
         shutil.rmtree(target)
 
     skills_dir.mkdir(parents=True, exist_ok=True)
@@ -112,17 +112,17 @@ def _install_from_file(
     force: bool,
     interactive: bool,
 ) -> bool:
-    """Instala a partir de um arquivo SKILL.md, extraindo name do frontmatter."""
+    """Install from a SKILL.md file, extracting name from frontmatter."""
     if src.name != "SKILL.md":
         raise ValueError(
-            f"Arquivo deve ser SKILL.md, mas é: {src.name}"
+            f"File must be SKILL.md, but got: {src.name}"
         )
 
     name = get_skill_name_from_skillmd(src)
     _validate_no_path_traversal(name)
     target = (skills_dir / name).resolve()
 
-    # Verifica se já existe
+    # Check if already exists
     if target.exists():
         if not force:
             if not interactive or not _prompt_overwrite(name):

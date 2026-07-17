@@ -6,9 +6,9 @@ from typing import Sequence
 
 
 def list_skills(skills_dir: Path) -> list[Path]:
-    """Lista diretórios no diretório global de skills.
+    """List directories in the global skills directory.
 
-    Retorna apenas diretórios (ignora arquivos soltos).
+    Returns only directories (ignores loose files).
     """
     if not skills_dir.exists():
         return []
@@ -18,9 +18,9 @@ def list_skills(skills_dir: Path) -> list[Path]:
 
 
 def linked_skills(link_target_dir: Path) -> list[Path]:
-    """Lista symlinks no diretório de destino.
+    """List symlinks in the target directory.
 
-    Retorna apenas links simbólicos válidos (target existente ou não).
+    Returns only valid symbolic links (existing target or not).
     """
     if not link_target_dir.exists():
         return []
@@ -30,12 +30,12 @@ def linked_skills(link_target_dir: Path) -> list[Path]:
 
 
 def _validate_skill_name(name: str) -> None:
-    """Valida o nome da skill contra path traversal."""
+    """Validate the skill name against path traversal."""
     if not name or name.strip() == "":
-        raise ValueError("Nome da skill não pode ser vazio")
+        raise ValueError("Skill name cannot be empty")
     if "/" in name or "\\" in name or ".." in name:
         raise ValueError(
-            f"Nome de skill inválido (path traversal detectado): {name}"
+            f"Invalid skill name (path traversal detected): {name}"
         )
 
 
@@ -45,20 +45,20 @@ def enable_skill(
     link_target_dir: Path,
     force: bool = False,
 ) -> bool:
-    """Cria um link simbólico da skill no diretório de destino.
+    """Create a symbolic link for the skill in the target directory.
 
-    Retorna True se o link foi criado, False se já existia e não --force.
+    Returns True if the link was created, False if it already existed and not --force.
     """
     _validate_skill_name(skill_name)
 
     source = (skills_dir / skill_name).resolve()
     if not source.exists():
         raise FileNotFoundError(
-            f"Skill não encontrada: {source}"
+            f"Skill not found: {source}"
         )
     if not source.is_dir():
         raise NotADirectoryError(
-            f"Skill não é um diretório: {source}"
+            f"Skill is not a directory: {source}"
         )
 
     link_target_dir.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,7 @@ def enable_skill(
     if link_path.is_symlink() or link_path.exists():
         if not force:
             return False
-        # Remove existente (arquivo, diretório ou symlink)
+        # Remove existing (file, directory or symlink)
         if link_path.is_symlink():
             link_path.unlink()
         elif link_path.is_dir():
@@ -75,7 +75,7 @@ def enable_skill(
         else:
             link_path.unlink()
 
-    # Tenta criar link relativo quando possível
+    # Try to create relative link when possible
     try:
         rel_source = os.path.relpath(source, link_target_dir)
         link_path.symlink_to(rel_source)
@@ -89,16 +89,16 @@ def disable_skill(
     skill_name: str,
     link_target_dir: Path,
 ) -> bool:
-    """Remove o link simbólico da skill.
+    """Remove the symbolic link for the skill.
 
-    Retorna True se removeu, False se não existia.
-    Idempotente: se não existir, não erro.
+    Returns True if removed, False if it did not exist.
+    Idempotent: if it does not exist, no error.
     """
     _validate_skill_name(skill_name)
 
     link_path = link_target_dir / skill_name
 
-    # Usar stat() para verificar symlink sem resolver
+    # Use stat() to check symlink without resolving
     try:
         is_sym = link_path.is_symlink()
     except (OSError, FileNotFoundError):
@@ -111,7 +111,7 @@ def disable_skill(
         link_path.unlink()
         return True
 
-    # Existe mas não é symlink — não removemos
+    # Exists but is not a symlink — we do not remove it
     raise ValueError(
-        f"{link_path} existe mas não é um link simbólico. Remova manualmente."
+        f"{link_path} exists but is not a symbolic link. Remove manually."
     )

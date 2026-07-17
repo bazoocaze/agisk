@@ -11,24 +11,24 @@ from .skills import enable_skill, disable_skill, list_skills, linked_skills
 
 def _epilog() -> str:
     return """\
-subcomandos:
-  use|enable <skill> [<skill> ...]   Cria link(s) simbólico(s) da(s) skill(s)
-  disable <skill> [<skill> ...]      Remove link(s) simbólico(s) da(s) skill(s)
-  install <caminho>                  Copia uma skill para o diretório global
-  list                               Lista skills disponíveis no diretório global
-  linked                             Lista skills linkadas no projeto atual
+subcommands:
+  use|enable <skill> [<skill> ...]   Create symbolic link(s) for skill(s)
+  disable <skill> [<skill> ...]      Remove symbolic link(s) for skill(s)
+  install <path>                     Copy a skill to the global directory
+  list                               List available skills in the global directory
+  linked                             List linked skills in the current project
 
-flags globais:
-  --base-dir DIR    Diretório base (prioridade sobre $AGISK_BASE_DIR)
-  --force           Sobrescrever sem perguntar
-  --verbose, -v     Saída detalhada
+global flags:
+  --base-dir DIR    Base directory (overrides $AGISK_BASE_DIR)
+  --force           Overwrite without asking
+  --verbose, -v     Verbose output
 """
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="agisk",
-        description="Agent Skills — Gerenciador de links simbólicos para skills de agentes",
+        description="Agent Skills — Symbolic link manager for agent skills",
         epilog=_epilog(),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -36,29 +36,29 @@ def build_parser() -> argparse.ArgumentParser:
         "--base-dir",
         type=str,
         default=None,
-        help="Diretório base (prioridade sobre $AGISK_BASE_DIR)",
+        help="Base directory (overrides $AGISK_BASE_DIR)",
     )
     parser.add_argument(
         "--force",
         action="store_true",
         default=False,
-        help="Sobrescrever sem perguntar",
+        help="Overwrite without asking",
     )
     parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         default=False,
-        help="Saída detalhada",
+        help="Verbose output",
     )
     parser.add_argument(
         "subcommand",
         nargs="?",
-        help="Subcomando: use|enable, disable, install, list, linked",
+        help="Subcommand: use|enable, disable, install, list, linked",
     )
     parser.add_argument(
         "args",
         nargs="*",
-        help="Argumentos do subcomando",
+        help="Subcommand arguments",
     )
     return parser
 
@@ -83,11 +83,11 @@ def main() -> None:
 
     _log(f"Base dir: {base_dir}", verbose)
 
-    # Carrega config
+    # Load config
     try:
         config = load_config()
     except FileNotFoundError as e:
-        print(f"Erro: {e}", file=sys.stderr)
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
     skills_dir = get_skills_dir(base_dir, config)
@@ -107,61 +107,61 @@ def main() -> None:
     # --- use / enable ---
     if sub in ("use", "enable"):
         if not args.args:
-            print("Erro: use/enable requer pelo menos uma skill", file=sys.stderr)
+            print("Error: use/enable requires at least one skill", file=sys.stderr)
             sys.exit(1)
         for skill_name in args.args:
             try:
                 result = enable_skill(skill_name, skills_dir, link_target_dir, force=force)
                 if result:
-                    print(f"Link criado: {skill_name}")
+                    print(f"Link created: {skill_name}")
                 else:
-                    msg = f"Skill '{skill_name}' já está linkada. Use --force para sobrescrever."
+                    msg = f"Skill '{skill_name}' is already linked. Use --force to overwrite."
                     if force:
-                        print(f"Link sobrescrito: {skill_name}")
+                        print(f"Link overwritten: {skill_name}")
                     else:
                         print(msg, file=sys.stderr)
             except (FileNotFoundError, NotADirectoryError, ValueError) as e:
-                print(f"Erro ao habilitar '{skill_name}': {e}", file=sys.stderr)
+                print(f"Error enabling '{skill_name}': {e}", file=sys.stderr)
                 sys.exit(1)
 
     # --- disable ---
     elif sub == "disable":
         if not args.args:
-            print("Erro: disable requer pelo menos uma skill", file=sys.stderr)
+            print("Error: disable requires at least one skill", file=sys.stderr)
             sys.exit(1)
         for skill_name in args.args:
             try:
                 result = disable_skill(skill_name, link_target_dir)
                 if result:
-                    print(f"Link removido: {skill_name}")
+                    print(f"Link removed: {skill_name}")
                 else:
-                    print(f"Skill '{skill_name}' não estava linkada.", file=sys.stderr)
+                    print(f"Skill '{skill_name}' was not linked.", file=sys.stderr)
             except (ValueError, FileNotFoundError) as e:
-                print(f"Erro ao desabilitar '{skill_name}': {e}", file=sys.stderr)
+                print(f"Error disabling '{skill_name}': {e}", file=sys.stderr)
                 sys.exit(1)
 
     # --- install ---
     elif sub == "install":
         if not args.args:
-            print("Erro: install requer um caminho", file=sys.stderr)
+            print("Error: install requires a path", file=sys.stderr)
             sys.exit(1)
         path = args.args[0]
         try:
             result = install_from_path(path, skills_dir, force=force, interactive=not force)
             if result:
-                print(f"Skill instalada: {path}")
+                print(f"Skill installed: {path}")
             else:
-                print("Instalação cancelada.", file=sys.stderr)
+                print("Installation cancelled.", file=sys.stderr)
                 sys.exit(1)
         except (FileNotFoundError, NotADirectoryError, ValueError) as e:
-            print(f"Erro ao instalar: {e}", file=sys.stderr)
+            print(f"Error installing: {e}", file=sys.stderr)
             sys.exit(1)
 
     # --- list ---
     elif sub == "list":
         skills = list_skills(skills_dir)
         if not skills:
-            print("Nenhuma skill encontrada.")
+            print("No skills found.")
         else:
             for s in skills:
                 print(s.name)
@@ -170,15 +170,15 @@ def main() -> None:
     elif sub == "linked":
         links = linked_skills(link_target_dir)
         if not links:
-            print("Nenhuma skill linkada.")
+            print("No linked skills.")
         else:
             for l in links:
                 target = l.resolve()
                 print(f"{l.name} -> {target}")
 
     else:
-        print(f"Subcomando desconhecido: {subcommand}", file=sys.stderr)
-        print("Use 'agisk --help' para ver os comandos disponíveis.", file=sys.stderr)
+        print(f"Unknown subcommand: {subcommand}", file=sys.stderr)
+        print("Use 'agisk --help' to see available commands.", file=sys.stderr)
         sys.exit(1)
 
 

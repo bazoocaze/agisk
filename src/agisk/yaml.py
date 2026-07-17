@@ -6,14 +6,14 @@ from typing import Any
 
 
 def parse_frontmatter(text: str) -> dict[str, Any]:
-    """Extrai frontmatter YAML entre '---' delimitadores no início do texto.
+    """Extracts YAML frontmatter between '---' delimiters at the start of the text.
 
-    Faz parse apenas de chaves/valores simples no top-level:
-    - chave: valor
-    - Não suporta aninhamento, listas, ou quoted strings complexas.
-    - Strings sem aspas, números, booleanos.
+    Parses only simple top-level key/value pairs:
+    - key: value
+    - Does not support nesting, lists, or complex quoted strings.
+    - Unquoted strings, numbers, booleans.
     """
-    # Padrão: começo da string, opcional whitespace, ---, newline, conteúdo, ---
+    # Pattern: start of string, optional whitespace, ---, newline, content, ---
     m = re.match(r"^\s*---\s*\n(.*?)\n---", text, re.DOTALL)
     if not m:
         return {}
@@ -31,7 +31,7 @@ def parse_frontmatter(text: str) -> dict[str, Any]:
         value = value.strip()
         if not key:
             continue
-        # Tenta converter para tipos básicos
+        # Try to convert to basic types
         if value.lower() in ("true", "yes", "on"):
             result[key] = True
         elif value.lower() in ("false", "no", "off"):
@@ -39,7 +39,7 @@ def parse_frontmatter(text: str) -> dict[str, Any]:
         elif value == "~" or value.lower() == "null":
             result[key] = None
         else:
-            # Tenta inteiro ou float
+            # Try int or float
             try:
                 result[key] = int(value)
             except ValueError:
@@ -51,12 +51,12 @@ def parse_frontmatter(text: str) -> dict[str, Any]:
 
 
 def get_skill_name_from_skillmd(path: Path) -> str:
-    """Lê um arquivo SKILL.md, extrai o frontmatter e retorna o campo 'name'."""
+    """Reads a SKILL.md file, extracts the frontmatter and returns the 'name' field."""
     text = path.read_text(encoding="utf-8")
     frontmatter = parse_frontmatter(text)
     name = frontmatter.get("name")
     if not name:
         raise ValueError(
-            f"Campo 'name' não encontrado no frontmatter de {path}"
+            f"Field 'name' not found in frontmatter of {path}"
         )
     return str(name)

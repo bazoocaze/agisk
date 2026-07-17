@@ -18,29 +18,29 @@ def _default_config() -> dict[str, Any]:
 
 
 def _ensure_config(base_dir: Path) -> Path:
-    """Cria config padrão se não existir."""
+    """Create default config if it does not exist."""
     config_path = base_dir / "config.json"
     if not config_path.exists():
         base_dir.mkdir(parents=True, exist_ok=True)
         cfg = _default_config()
         config_path.write_text(json.dumps(cfg, indent=2) + "\n")
-        # Permissão segura: 600
+        # Secure permission: 600
         config_path.chmod(0o600)
     return config_path
 
 
 def load_config() -> dict[str, Any]:
-    """Carrega o config.json.
+    """Load the config.json.
 
-    Prioridade:
-    1. $AGISK_CONFIG → arquivo JSON customizado
+    Priority:
+    1. $AGISK_CONFIG -> custom JSON file
     2. <base_dir>/config.json
     """
     config_source = os.environ.get("AGISK_CONFIG")
     if config_source:
         config_path = Path(config_source)
         if not config_path.exists():
-            # Se AGISK_CONFIG foi explicitamente definido, cria o config
+            # If AGISK_CONFIG was explicitly set, create the config
             config_path.parent.mkdir(parents=True, exist_ok=True)
             cfg = _default_config()
             config_path.write_text(json.dumps(cfg, indent=2) + "\n")
@@ -53,10 +53,10 @@ def load_config() -> dict[str, Any]:
 
 
 def get_base_dir() -> Path:
-    """Resolve o diretório base.
+    """Resolve the base directory.
 
-    Prioridade:
-    1. --base-dir (passado como argumento, resolvido externamente)
+    Priority:
+    1. --base-dir (passed as argument, resolved externally)
     2. $AGISK_BASE_DIR
     3. ~/.agisk/
     """
@@ -67,11 +67,11 @@ def get_base_dir() -> Path:
 
 
 def get_skills_dir(base_dir: Path | None = None, config: dict[str, Any] | None = None) -> Path:
-    """Resolve o diretório global de skills.
+    """Resolve the global skills directory.
 
-    Prioridade:
-    1. $AGISK_SKILLS_DIR (absoluto ou relativo ao CWD)
-    2. Config: skills_dir (relativo ao base_dir, ou absoluto se começar com /)
+    Priority:
+    1. $AGISK_SKILLS_DIR (absolute or relative to CWD)
+    2. Config: skills_dir (relative to base_dir, or absolute if starting with /)
     3. <base_dir>/skills/
     """
     env_skills = os.environ.get("AGISK_SKILLS_DIR")
@@ -94,10 +94,10 @@ def get_skills_dir(base_dir: Path | None = None, config: dict[str, Any] | None =
 
 
 def get_link_target_dir(config: dict[str, Any] | None = None) -> Path:
-    """Resolve o diretório de destino para os links.
+    """Resolve the target directory for links.
 
-    Lê de config > fallback .agent/skills.
-    Resolve relativo ao CWD.
+    Reads from config > fallback .agent/skills.
+    Resolved relative to CWD.
     """
     if config is None:
         config = load_config()

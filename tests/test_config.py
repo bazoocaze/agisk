@@ -20,9 +20,9 @@ def test_default_base_dir():
 
 
 def test_load_config_creates_default(tmp_path: Path):
-    """load_config() deve criar config padrão se não existir."""
+    """load_config() should create a default config if it does not exist."""
     config_path = tmp_path / "agisk-config.json"
-    # Config não existe ainda
+    # Config does not exist yet
     old_env = os.environ.get("AGISK_CONFIG")
     try:
         os.environ["AGISK_CONFIG"] = str(config_path)
@@ -37,7 +37,7 @@ def test_load_config_creates_default(tmp_path: Path):
 
 
 def test_load_config_custom_file(tmp_path: Path):
-    """load_config() com AGISK_CONFIG apontando para JSON customizado."""
+    """load_config() with AGISK_CONFIG pointing to a custom JSON."""
     config_path = tmp_path / "custom-config.json"
     config_path.write_text(json.dumps({
         "skills_dir": "/tmp/my-skills",
@@ -57,7 +57,7 @@ def test_load_config_custom_file(tmp_path: Path):
 
 
 def test_load_config_file_not_found(tmp_path: Path):
-    """load_config() com AGISK_CONFIG é criado se não existir, não erro."""
+    """load_config() with AGISK_CONFIG is created if it does not exist, no error."""
     config_path = tmp_path / "nonexistent" / "config.json"
     old_env = os.environ.get("AGISK_CONFIG")
     try:

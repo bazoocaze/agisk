@@ -75,5 +75,5 @@ def test_get_skill_name_from_skillmd_missing_name(tmp_path: Path):
     path = tmp_path / "SKILL.md"
     path.write_text("---\ndescription: no name\n---\n# Content")
     import pytest
-    with pytest.raises(ValueError, match="Campo 'name' não encontrado"):
+    with pytest.raises(ValueError, match="Field 'name' not found"):
         get_skill_name_from_skillmd(path)

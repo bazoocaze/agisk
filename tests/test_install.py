@@ -20,13 +20,13 @@ class TestInstallFromDirectory:
     def test_install_directory_without_skillmd(self, tmp_skills_dir: Path, tmp_path: Path):
         empty_dir = tmp_path / "empty-skill"
         empty_dir.mkdir()
-        with pytest.raises(NotADirectoryError, match="não contém SKILL.md"):
+        with pytest.raises(NotADirectoryError, match="does not contain SKILL.md"):
             install_from_path(empty_dir, tmp_skills_dir)
 
     def test_install_directory_already_exists_no_force(self, tmp_skills_dir: Path, sample_skill_dir: Path):
-        # Instala uma vez
+        # Install once
         install_from_path(sample_skill_dir, tmp_skills_dir)
-        # Segunda vez sem force, modo não-interativo
+        # Second time without force, non-interactive mode
         result = install_from_path(sample_skill_dir, tmp_skills_dir, force=False, interactive=False)
         assert result is False
 
@@ -41,12 +41,12 @@ class TestInstallFromDirectory:
         (real_dir / "SKILL.md").write_text("---\nname: real-skill\n---\n")
         symlink = tmp_path / "symlink-skill"
         symlink.symlink_to(real_dir)
-        # Deve rejeitar porque é symlink
+        # Should reject because it is a symlink
         with pytest.raises(ValueError, match="symlink"):
             install_from_path(str(symlink), tmp_skills_dir)
 
     def test_path_traversal_in_dirname(self, tmp_skills_dir: Path, tmp_path: Path):
-        # Testa que nomes com '..' são rejeitados na validação
+        # Tests that names with '..' are rejected in validation
         from agisk.install import _validate_no_path_traversal
         with pytest.raises(ValueError, match="path traversal"):
             _validate_no_path_traversal("../evil")
@@ -74,7 +74,7 @@ class TestInstallFromFile:
             install_from_path(not_skillmd, tmp_skills_dir)
 
     def test_install_skillmd_no_name(self, tmp_skills_dir: Path, sample_skill_md_no_name: Path):
-        with pytest.raises(ValueError, match="Campo 'name' não encontrado"):
+        with pytest.raises(ValueError, match="Field 'name' not found"):
             install_from_path(sample_skill_md_no_name, tmp_skills_dir)
 
     def test_reject_symlink_file(self, tmp_skills_dir: Path, tmp_path: Path):
@@ -98,7 +98,7 @@ class TestInstallEdgeCases:
             install_from_path("/nonexistent/path", tmp_skills_dir)
 
     def test_install_from_cwd_relative(self, tmp_skills_dir: Path, sample_skill_dir: Path):
-        """Testa instalação com caminho relativo."""
+        """Tests installation with a relative path."""
         import os
         old_cwd = Path.cwd()
         try:
