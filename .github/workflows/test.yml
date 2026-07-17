@@ -18,8 +18,8 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Create virtualenv and install dependencies
-        run: uv sync
+      - name: Install dev dependencies (pytest)
+        run: uv sync --group dev
 
       - name: Run tests
         run: uv run pytest -v
