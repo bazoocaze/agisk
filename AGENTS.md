@@ -2,6 +2,12 @@
 
 This document explains how AI coding agents (like **pi**, Claude Code, Cline, Aider, etc.) can consume and use **agisk** skills.
 
+## Agent Instructions
+
+When working on this project, always write commit messages in **English**.
+
+---
+
 ## Overview
 
 **agisk** manages symbolic links to agent skills. Each skill is a directory containing a `SKILL.md` file (and optionally other files). Agent tools can read these linked skills to discover available capabilities, instructions, or context files.
