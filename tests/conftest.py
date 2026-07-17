@@ -1,0 +1,70 @@
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+import pytest
+
+
+@pytest.fixture
+def tmp_base_dir(tmp_path: Path) -> Path:
+    """Cria um diretório base temporário."""
+    base = tmp_path / ".agisk"
+    base.mkdir(parents=True)
+    return base
+
+
+@pytest.fixture
+def tmp_skills_dir(tmp_base_dir: Path) -> Path:
+    """Cria um diretório de skills temporário dentro do base_dir."""
+    skills = tmp_base_dir / "skills"
+    skills.mkdir(parents=True)
+    return skills
+
+
+@pytest.fixture
+def tmp_config(tmp_base_dir: Path) -> Path:
+    """Cria um config.json padrão no base_dir."""
+    cfg = tmp_base_dir / "config.json"
+    cfg.write_text(json.dumps({
+        "skills_dir": "skills",
+        "link_target_dir": ".agent/skills",
+    }) + "\n")
+    return cfg
+
+
+@pytest.fixture
+def cwd_with_agent(tmp_path: Path) -> Path:
+    """Cria um diretório de projeto com .agent/skills."""
+    project = tmp_path / "my-project"
+    project.mkdir(parents=True)
+    agent_skills = project / ".agent" / "skills"
+    agent_skills.mkdir(parents=True)
+    return project
+
+
+@pytest.fixture
+def sample_skill_dir(tmp_path: Path) -> Path:
+    """Cria um diretório de skill de exemplo com SKILL.md."""
+    skill = tmp_path / "my-skill"
+    skill.mkdir(parents=True)
+    skill_md = skill / "SKILL.md"
+    skill_md.write_text("---\nname: my-skill\n---\n# My Skill\n")
+    return skill
+
+
+@pytest.fixture
+def sample_skill_md(tmp_path: Path) -> Path:
+    """Cria um arquivo SKILL.md avulso."""
+    path = tmp_path / "SKILL.md"
+    path.write_text("---\nname: my-file-skill\n---\n# My File Skill\n")
+    return path
+
+
+@pytest.fixture
+def sample_skill_md_no_name(tmp_path: Path) -> Path:
+    """Cria um SKILL.md sem campo name."""
+    path = tmp_path / "SKILL.md"
+    path.write_text("---\ndescription: sem nome\n---\n# No Name\n")
+    return path
