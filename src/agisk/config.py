@@ -63,7 +63,7 @@ def get_skills_dirs(config: dict[str, Any], config_path: Path) -> list[Path]:
 
 
 def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
-    p = Path(dir_str)
+    p = Path(dir_str).expanduser()
     if p.is_absolute():
         return p.resolve()
     return (base_dir / p).resolve()
