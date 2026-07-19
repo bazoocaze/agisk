@@ -21,7 +21,7 @@ subcommands:
   linked                             List linked skills in the current project
 
 global flags:
-  --config PATH  Config file path (overrides $AGISK_CONFIG_FILE)
+  --config PATH  Config file path (default: ~/.agisk/config.json, overrides $AGISK_CONFIG_FILE)
   --force        Overwrite without asking
   --verbose, -v  Verbose output
 """
@@ -38,7 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--config",
         type=str,
         default=None,
-        help="Config file path (overrides $AGISK_CONFIG_FILE)",
+        help="Config file path (default: ~/.agisk/config.json, overrides $AGISK_CONFIG_FILE)",
     )
     parser.add_argument(
         "--force",
