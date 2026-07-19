@@ -94,7 +94,7 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 ```json
 {
   "skills_dir": "skills",
-  "link_target_dir": ".agent/skills"
+  "link_target_dir": ".agents/skills"
 }
 ```
 
@@ -126,7 +126,7 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 
 ```
 my-project/                # Current project ($PWD)
-└── .agent/
+└── .agents/
     └── skills/            # Symbolic links (created by agisk use)
         ├── my-skill-1 -> ~/.agisk/skills/my-skill-1
         └── my-skill-2 -> ~/.agisk/skills/my-skill-2

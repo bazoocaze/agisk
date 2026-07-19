@@ -1,6 +1,6 @@
 [project]
 name = "agisk"
-version = "1.2.0"
+version = "1.2.1"
 description = "Agent Skills — Symbolic link manager for agent skills"
 authors = [
     { name = "agisk contributors" },

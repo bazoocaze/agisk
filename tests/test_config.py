@@ -19,7 +19,7 @@ def test_load_config_creates_default(monkeypatch, tmp_path: Path):
     config_path = tmp_path / "config.json"
     monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
     config = load_config()
-    assert config == {"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}
+    assert config == {"skills_dirs": ["skills"], "link_target_dir": ".agents/skills"}
     assert config_path.exists()
     assert config_path.read_text().strip().endswith("}")
 
@@ -76,9 +76,9 @@ def test_get_skills_dirs_from_config_list(tmp_path: Path):
     config_path = tmp_path / ".agisk" / "config.json"
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
-        '{"skills_dirs": ["my-skills"], "link_target_dir": ".agent/skills"}'
+        '{"skills_dirs": ["my-skills"], "link_target_dir": ".agents/skills"}'
     )
-    config = {"skills_dirs": ["my-skills"], "link_target_dir": ".agent/skills"}
+    config = {"skills_dirs": ["my-skills"], "link_target_dir": ".agents/skills"}
     result = get_skills_dirs(config, config_path)
     assert result == [(config_path.parent / "my-skills").resolve()]
 
@@ -87,10 +87,10 @@ def test_get_skills_dirs_multiple(tmp_path: Path):
     config_path = tmp_path / ".agisk" / "config.json"
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
-        '{"skills_dirs": ["a-skills", "b-skills"], "link_target_dir": ".agent/skills"}'
+        '{"skills_dirs": ["a-skills", "b-skills"], "link_target_dir": ".agents/skills"}'
     )
     base = config_path.parent.resolve()
-    config = {"skills_dirs": ["a-skills", "b-skills"], "link_target_dir": ".agent/skills"}
+    config = {"skills_dirs": ["a-skills", "b-skills"], "link_target_dir": ".agents/skills"}
     result = get_skills_dirs(config, config_path)
     assert result == [base / "a-skills", base / "b-skills"]
 
@@ -99,10 +99,10 @@ def test_get_skills_dirs_absolute_in_config(tmp_path: Path):
     config_path = tmp_path / ".agisk" / "config.json"
     config_path.parent.mkdir(parents=True)
     config_path.write_text(
-        json.dumps({"skills_dirs": [str(tmp_path / "absolute-skills")], "link_target_dir": ".agent/skills"})
+        json.dumps({"skills_dirs": [str(tmp_path / "absolute-skills")], "link_target_dir": ".agents/skills"})
     )
     abs_skills = tmp_path / "absolute-skills"
-    config = {"skills_dirs": [str(abs_skills)], "link_target_dir": ".agent/skills"}
+    config = {"skills_dirs": [str(abs_skills)], "link_target_dir": ".agents/skills"}
     result = get_skills_dirs(config, config_path)
     assert result == [abs_skills.resolve()]
 
@@ -111,7 +111,7 @@ def test_get_skills_dirs_fallback_to_old_skills_dir(tmp_path: Path):
     """Old skills_dir (string) should be converted to a single-element list with warning."""
     config_path = tmp_path / ".agisk" / "config.json"
     config_path.parent.mkdir(parents=True)
-    config = {"skills_dir": "my-skills", "link_target_dir": ".agent/skills"}
+    config = {"skills_dir": "my-skills", "link_target_dir": ".agents/skills"}
     import io
     import sys
     captured = io.StringIO()
@@ -130,15 +130,15 @@ def test_get_skills_dirs_default(tmp_path: Path):
     base = tmp_path / "custom"
     base.mkdir(parents=True)
     config_path = base / "config.json"
-    config_path.write_text('{"link_target_dir": ".agent/skills"}')
-    config = {"link_target_dir": ".agent/skills"}
+    config_path.write_text('{"link_target_dir": ".agents/skills"}')
+    config = {"link_target_dir": ".agents/skills"}
     result = get_skills_dirs(config, config_path)
     assert result == [base / "skills"]
 
 
 def test_get_link_target_dir_default():
     config = {}
-    expected = Path.cwd() / ".agent" / "skills"
+    expected = Path.cwd() / ".agents" / "skills"
     assert get_link_target_dir(config) == expected.resolve()
 
 

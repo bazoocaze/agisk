@@ -10,7 +10,7 @@ from typing import Any
 def _default_config() -> dict[str, Any]:
     return {
         "skills_dirs": ["skills"],
-        "link_target_dir": ".agent/skills",
+        "link_target_dir": ".agents/skills",
     }
 
 
@@ -68,5 +68,5 @@ def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
 def get_link_target_dir(config: dict[str, Any] | None = None) -> Path:
     if config is None:
         config = load_config()
-    target = config.get("link_target_dir", ".agent/skills")
+    target = config.get("link_target_dir", ".agents/skills")
     return (Path.cwd() / Path(target)).resolve()

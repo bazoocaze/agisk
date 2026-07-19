@@ -29,17 +29,17 @@ def tmp_config(tmp_base_dir: Path) -> Path:
     cfg = tmp_base_dir / "config.json"
     cfg.write_text(json.dumps({
         "skills_dir": "skills",
-        "link_target_dir": ".agent/skills",
+        "link_target_dir": ".agents/skills",
     }) + "\n")
     return cfg
 
 
 @pytest.fixture
 def cwd_with_agent(tmp_path: Path) -> Path:
-    """Creates a project directory with .agent/skills."""
+    """Creates a project directory with .agents/skills."""
     project = tmp_path / "my-project"
     project.mkdir(parents=True)
-    agent_skills = project / ".agent" / "skills"
+    agent_skills = project / ".agents" / "skills"
     agent_skills.mkdir(parents=True)
     return project
 

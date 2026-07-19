@@ -125,7 +125,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agents/skills"}'
         )
         (base_dir / "skills").mkdir()
 
@@ -144,17 +144,17 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agents/skills"}'
         )
         skills_dir = base_dir / "skills"
         skills_dir.mkdir()
         (skills_dir / "skill-a").mkdir()
         (skills_dir / "skill-b").mkdir()
 
-        # Create a project dir with .agent/skills
+        # Create a project dir with .agents/skills
         project = tmp_path / "project"
         project.mkdir()
-        (project / ".agent" / "skills").mkdir(parents=True)
+        (project / ".agents" / "skills").mkdir(parents=True)
         monkeypatch.chdir(project)
 
         monkeypatch.setattr("sys.argv", ["agisk", "use"])
@@ -173,7 +173,7 @@ class TestUseEnableInteractive:
         main()
         captured = capsys.readouterr()
         assert "Link created: skill-a" in captured.out
-        assert (project / ".agent" / "skills" / "skill-a").is_symlink()
+        assert (project / ".agents" / "skills" / "skill-a").is_symlink()
 
     def test_interactive_cancel_selection(self, capsys, monkeypatch, tmp_path):
         """When user cancels (None/empty), exit cleanly."""
@@ -181,7 +181,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agents/skills"}'
         )
         skills_dir = base_dir / "skills"
         skills_dir.mkdir()
@@ -189,7 +189,7 @@ class TestUseEnableInteractive:
 
         project = tmp_path / "project"
         project.mkdir()
-        (project / ".agent" / "skills").mkdir(parents=True)
+        (project / ".agents" / "skills").mkdir(parents=True)
         monkeypatch.chdir(project)
 
         monkeypatch.setattr("sys.argv", ["agisk", "use"])
@@ -210,7 +210,7 @@ class TestUseEnableInteractive:
         assert exc.value.code == 0
         captured = capsys.readouterr()
         assert "Cancelled." in captured.out
-        assert not (project / ".agent" / "skills" / "skill-a").exists()
+        assert not (project / ".agents" / "skills" / "skill-a").exists()
 
     def test_interactive_not_tty_uses_args(self, capsys, monkeypatch, tmp_path):
         """When stdin is not a TTY and no args, should error (not enter interactive)."""
@@ -221,7 +221,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agents/skills"}'
         )
         monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
 
