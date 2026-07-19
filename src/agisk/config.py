@@ -7,10 +7,14 @@ from pathlib import Path
 from typing import Any
 
 
+DEFAULT_SKILLS_DIRS = ["skills"]
+DEFAULT_LINK_TARGET_DIR = ".agents/skills"
+
+
 def _default_config() -> dict[str, Any]:
     return {
-        "skills_dirs": ["skills"],
-        "link_target_dir": ".agents/skills",
+        "skills_dirs": DEFAULT_SKILLS_DIRS,
+        "link_target_dir": DEFAULT_LINK_TARGET_DIR,
     }
 
 
@@ -55,7 +59,7 @@ def get_skills_dirs(config: dict[str, Any], config_path: Path) -> list[Path]:
         )
         return [_resolve_skills_dir(old, base_dir)]
 
-    return [_resolve_skills_dir("skills", base_dir)]
+    return [_resolve_skills_dir(DEFAULT_SKILLS_DIRS[0], base_dir)]
 
 
 def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
@@ -68,5 +72,5 @@ def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
 def get_link_target_dir(config: dict[str, Any] | None = None) -> Path:
     if config is None:
         config = load_config()
-    target = config.get("link_target_dir", ".agents/skills")
+    target = config.get("link_target_dir", DEFAULT_LINK_TARGET_DIR)
     return (Path.cwd() / Path(target)).resolve()
