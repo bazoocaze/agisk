@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from pathlib import Path
 from typing import Optional
 
+from .skill import Skill, validate_skill_name
 from .yaml import get_skill_name_from_skillmd
-
-
-def _validate_no_path_traversal(name: str) -> None:
-    """Validate name against path traversal."""
-    if not name or name.strip() == "":
-        raise ValueError("Skill name cannot be empty")
-    if "/" in name or "\\" in name or ".." in name:
-        raise ValueError(
-            f"Invalid skill name (path traversal detected): {name}"
-        )
 
 
 def _prompt_overwrite(name: str) -> bool:
@@ -84,13 +76,16 @@ def _install_from_directory(
             f"Directory does not contain SKILL.md: {src}"
         )
 
+    skill = Skill.from_dir(src)
+    for w in skill.warnings:
+        print(f"Warning: {w}", file=sys.stderr)
+    if not skill.valid:
+        for e in skill.errors:
+            print(f"Error: {e}", file=sys.stderr)
+        raise ValueError(f"Invalid skill in {src}")
+
     name = src.name
-    _validate_no_path_traversal(name)
-    # Also validate that the directory name itself contains path traversal
-    if ".." in src.name or src.name.startswith("/"):
-        raise ValueError(
-            f"Invalid skill name (path traversal detected): {src.name}"
-        )
+    validate_skill_name(name)
     target = (skills_dir / name).resolve()
 
     # Check if already exists
@@ -98,7 +93,6 @@ def _install_from_directory(
         if not force:
             if not interactive or not _prompt_overwrite(name):
                 return False
-        # Remove existing
         shutil.rmtree(target)
 
     skills_dir.mkdir(parents=True, exist_ok=True)
@@ -119,7 +113,7 @@ def _install_from_file(
         )
 
     name = get_skill_name_from_skillmd(src)
-    _validate_no_path_traversal(name)
+    validate_skill_name(name)
     target = (skills_dir / name).resolve()
 
     # Check if already exists

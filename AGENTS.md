@@ -60,7 +60,7 @@ Data flow in `main()` (cli.py):
 4. `get_link_target_dir()` → `.agents/skills` (resolved from CWD)
 5. Dispatch to subcommand (`use`/`disable`/`install`/`list`/`linked`)
 
-Each subcommand calls the corresponding function in `skills.py`, `ui.py`, or `install.py`. The `yaml.py` parser is used only by `install.py` to extract `name` from SKILL.md frontmatter.
+Each subcommand calls the corresponding function in `skills.py`, `ui.py`, or `install.py`. The `yaml.py` parser is used by `install.py` and `skill.py` to extract `name` from SKILL.md frontmatter.
 
 Interactive mode (`use` with no args on a TTY) is handled by `ui.py` via `questionary`.
 
@@ -82,14 +82,15 @@ Each function in `skills.py` and `install.py` follows:
 
 ```python
 def function_name(param: str, dir_path: Path, ...) -> bool:
-    _validate_something(param)
+    validate_skill_name(param)
     # do work
     return True  # or False if no-op
 ```
 
 - Return `bool`: `True` = action performed, `False` = no-op (already exists, cancelled)
 - Raise `FileNotFoundError`, `ValueError`, `NotADirectoryError` for errors
-- Validate skill names with `_validate_skill_name()` or `_validate_no_path_traversal()` (rejects `/`, `\\`, `..`, empty)
+- Validate skill names with `validate_skill_name()` from `skill.py` (rejects `/`, `\\`, `..`, empty)
+- Skill names **must not** contain `/`, `\\`, or `..` — this is a simple string check, not a full path traversal analysis
 
 ### Error Pattern in CLI
 
@@ -139,7 +140,8 @@ Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `s
 | `__main__.py` | Entry point for `python -m agisk` |
 | `cli.py` | CLI argument parsing (`argparse`) and `main()` dispatcher |
 | `config.py` | Loads `config.json`, resolves dirs from env vars, flags, and defaults |
-| `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()` |
+| `skill.py` | `Skill` dataclass, `Skill.from_dir()`, `validate_skill_name()` |
+| `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()`, `find_duplicates()` |
 | `install.py` | `install_from_path()` — copies skill into global dir |
 | `ui.py` | Interactive mode (`questionary` checkbox) for `use` subcommand |
 | `yaml.py` | Minimal YAML frontmatter parser (`parse_frontmatter`, `get_skill_name_from_skillmd`) |
@@ -151,6 +153,7 @@ Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `s
 | `conftest.py` | Shared fixtures (see table above) |
 | `test_cli.py` | CLI argument parsing and flags |
 | `test_config.py` | Config loading, env vars, defaults |
+| `test_skill.py` | `Skill` dataclass, `Skill.from_dir()` edge cases |
 | `test_skills.py` | Enable/disable/list/linked |
 | `test_install.py` | Install from dir, file, symlink rejection, overwrite |
 | `test_yaml.py` | Frontmatter parsing, edge cases, missing fields |

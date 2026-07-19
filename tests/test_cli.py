@@ -62,6 +62,13 @@ def test_parser_linked():
     assert args.subcommand == "linked"
 
 
+def test_parser_validate():
+    parser = build_parser()
+    args = parser.parse_args(["validate"])
+    assert args.subcommand == "validate"
+    assert args.args == []
+
+
 def test_parser_force_flag():
     parser = build_parser()
     args = parser.parse_args(["--force", "use", "my-skill"])
@@ -111,6 +118,7 @@ def test_parser_help(capsys):
     assert "install" in captured.out
     assert "list" in captured.out
     assert "linked" in captured.out
+    assert "validate" in captured.out
 
 
 class TestUseEnableInteractive:

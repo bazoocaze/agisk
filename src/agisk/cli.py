@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .config import get_config_path, get_skills_dirs, get_link_target_dir, load_config
 from .install import install_from_path
-from .skills import enable_skill, disable_skill, list_skills, linked_skills
+from .skills import enable_skill, disable_skill, list_skills, linked_skills, find_duplicates
 from .ui import interactive_enable_skills
 
 
@@ -18,6 +18,7 @@ subcommands:
   install <path>                     Copy a skill to the global directory
   list                               List available skills in the global directory
   linked                             List linked skills in the current project
+  validate                           Validate all installed skills
 
 global flags:
   --config PATH  Config file path (default: ~/.agisk/config.json, overrides $AGISK_CONFIG_FILE)
@@ -54,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "subcommand",
         nargs="?",
-        help="Subcommand: use|enable, disable, install, list, linked",
+        help="Subcommand: use|enable, disable, install, list, linked, validate",
     )
     parser.add_argument(
         "args",
@@ -76,14 +77,12 @@ def main() -> None:
     verbose = args.verbose
     force = args.force
 
-    # Resolve config_path
     config_path = get_config_path(
         Path(args.config).resolve() if args.config else None
     )
 
     _log(f"Config path: {config_path}", verbose)
 
-    # Load config
     try:
         config = load_config(config_path)
     except FileNotFoundError as e:
@@ -171,7 +170,13 @@ def main() -> None:
             print("No skills found.")
         else:
             for s in skills:
-                print(s.name)
+                if s.valid:
+                    line = f"✅ {s.name}"
+                else:
+                    line = f"❌ {s.name}"
+                if s.description:
+                    line += f" — {s.description}"
+                print(line)
 
     # --- linked ---
     elif sub == "linked":
@@ -179,9 +184,43 @@ def main() -> None:
         if not links:
             print("No linked skills.")
         else:
-            for l in links:
-                target = l.resolve()
-                print(f"{l.name} -> {target}")
+            for s in links:
+                target = s.path.resolve()
+                line = f"{s.name} -> {target}"
+                if s.description:
+                    line += f" — {s.description}"
+                if not s.valid:
+                    line += " ⚠️"
+                print(line)
+
+    # --- validate ---
+    elif sub == "validate":
+        skills = list_skills(skills_dirs)
+        duplicates = find_duplicates(skills_dirs)
+        all_valid = True
+
+        if not skills and not duplicates:
+            print("No skills found.")
+            sys.exit(0)
+
+        for s in skills:
+            if s.valid:
+                print(f"✅ {s.name}")
+            else:
+                all_valid = False
+                print(f"❌ {s.name}")
+            for e in s.errors:
+                print(f"    ❌ {e}")
+            for w in s.warnings:
+                print(f"    ⚠️ {w}")
+
+        for name, paths in duplicates:
+            all_valid = False
+            print(f"⚠️ {name}")
+            for p in paths:
+                print(f"    Duplicate in: {p}")
+
+        sys.exit(0 if all_valid else 1)
 
     else:
         print(f"Unknown subcommand: {subcommand}", file=sys.stderr)

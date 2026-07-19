@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import os
-import warnings
+import sys
 from pathlib import Path
 
+from .skill import Skill, validate_skill_name
 
-def list_skills(skills_dirs: list[Path]) -> list[Path]:
-    """List skill directories across multiple global directories.
 
-    Iterates through each directory in order; the first occurrence of a
-    skill name wins.  Emits a warning for each duplicate that is skipped.
-    Returns only directories (ignores loose files).
-    """
+def list_skills(skills_dirs: list[Path]) -> list[Skill]:
     seen: dict[str, Path] = {}
     for d in skills_dirs:
         if not d.exists():
@@ -20,36 +16,39 @@ def list_skills(skills_dirs: list[Path]) -> list[Path]:
             if not p.is_dir():
                 continue
             if p.name in seen:
-                warnings.warn(
-                    f"⚠️  Skill '{p.name}' found in multiple directories; "
-                    f"using '{seen[p.name]}' and ignoring '{p.resolve()}'",
-                    stacklevel=2,
-                )
-            else:
-                seen[p.name] = p
-    return sorted(seen.values(), key=lambda x: x.name)
-
-
-def linked_skills(link_target_dir: Path) -> list[Path]:
-    """List symlinks in the target directory.
-
-    Returns only valid symbolic links (existing target or not).
-    """
-    if not link_target_dir.exists():
-        return []
+                continue
+            seen[p.name] = p
     return sorted(
-        [p for p in link_target_dir.iterdir() if p.is_symlink()]
+        [Skill.from_dir(p) for p in seen.values()],
+        key=lambda s: s.dir_name,
     )
 
 
-def _validate_skill_name(name: str) -> None:
-    """Validate the skill name against path traversal."""
-    if not name or name.strip() == "":
-        raise ValueError("Skill name cannot be empty")
-    if "/" in name or "\\" in name or ".." in name:
-        raise ValueError(
-            f"Invalid skill name (path traversal detected): {name}"
-        )
+def linked_skills(link_target_dir: Path) -> list[Skill]:
+    if not link_target_dir.exists():
+        return []
+    result: list[Skill] = []
+    for p in sorted(link_target_dir.iterdir()):
+        if not p.is_symlink():
+            continue
+        target = p.resolve()
+        if not target.exists():
+            result.append(
+                Skill(
+                    path=p,
+                    dir_name=p.name,
+                    name=p.name,
+                    description="",
+                    has_skill_md=False,
+                    has_frontmatter=False,
+                    raw_frontmatter={},
+                    errors=["Broken symlink: target does not exist"],
+                )
+            )
+        else:
+            skill = Skill.from_dir(target)
+            result.append(skill)
+    return result
 
 
 def enable_skill(
@@ -58,14 +57,7 @@ def enable_skill(
     link_target_dir: Path,
     force: bool = False,
 ) -> bool:
-    """Create a symbolic link for the skill in the target directory.
-
-    Searches through ``skills_dirs`` in order and uses the first directory
-    that contains the skill.
-
-    Returns True if the link was created, False if it already existed and not --force.
-    """
-    _validate_skill_name(skill_name)
+    validate_skill_name(skill_name)
 
     source = _find_skill_dir(skill_name, skills_dirs)
     if source is None:
@@ -81,7 +73,6 @@ def enable_skill(
     if link_path.is_symlink() or link_path.exists():
         if not force:
             return False
-        # Remove existing (file, directory or symlink)
         if link_path.is_symlink():
             link_path.unlink()
         elif link_path.is_dir():
@@ -89,7 +80,6 @@ def enable_skill(
         else:
             link_path.unlink()
 
-    # Try to create relative link when possible
     try:
         rel_source = os.path.relpath(source, link_target_dir)
         link_path.symlink_to(rel_source)
@@ -111,16 +101,10 @@ def disable_skill(
     skill_name: str,
     link_target_dir: Path,
 ) -> bool:
-    """Remove the symbolic link for the skill.
-
-    Returns True if removed, False if it did not exist.
-    Idempotent: if it does not exist, no error.
-    """
-    _validate_skill_name(skill_name)
+    validate_skill_name(skill_name)
 
     link_path = link_target_dir / skill_name
 
-    # Use stat() to check symlink without resolving
     try:
         is_sym = link_path.is_symlink()
     except (OSError, FileNotFoundError):
@@ -133,7 +117,22 @@ def disable_skill(
         link_path.unlink()
         return True
 
-    # Exists but is not a symlink — we do not remove it
     raise ValueError(
         f"{link_path} exists but is not a symbolic link. Remove manually."
     )
+
+
+def find_duplicates(skills_dirs: list[Path]) -> list[tuple[str, list[Path]]]:
+    seen: dict[str, list[Path]] = {}
+    for d in skills_dirs:
+        if not d.exists():
+            continue
+        for p in d.iterdir():
+            if not p.is_dir():
+                continue
+            if p.name not in seen:
+                seen[p.name] = []
+            seen[p.name].append(p)
+    return [
+        (name, paths) for name, paths in seen.items() if len(paths) > 1
+    ]

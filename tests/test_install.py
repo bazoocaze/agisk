@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from agisk.install import install_from_path
-from agisk.install import _validate_no_path_traversal
+from agisk.skill import validate_skill_name
 
 
 class TestInstallFromDirectory:
@@ -46,16 +46,15 @@ class TestInstallFromDirectory:
             install_from_path(str(symlink), tmp_skills_dir)
 
     def test_path_traversal_in_dirname(self, tmp_skills_dir: Path, tmp_path: Path):
-        # Tests that names with '..' are rejected in validation
-        from agisk.install import _validate_no_path_traversal
-        with pytest.raises(ValueError, match="path traversal"):
-            _validate_no_path_traversal("../evil")
-        with pytest.raises(ValueError, match="path traversal"):
-            _validate_no_path_traversal("sub/../evil")
-        with pytest.raises(ValueError, match="path traversal"):
-            _validate_no_path_traversal("..\\evil")
-        with pytest.raises(ValueError, match="path traversal"):
-            _validate_no_path_traversal("skill..name")
+        from agisk.skill import validate_skill_name
+        with pytest.raises(ValueError, match="must not contain"):
+            validate_skill_name("../evil")
+        with pytest.raises(ValueError, match="must not contain"):
+            validate_skill_name("sub/../evil")
+        with pytest.raises(ValueError, match="must not contain"):
+            validate_skill_name("..\\evil")
+        with pytest.raises(ValueError, match="must not contain"):
+            validate_skill_name("skill..name")
 
 
 class TestInstallFromFile:
@@ -88,7 +87,7 @@ class TestInstallFromFile:
     def test_path_traversal_in_name(self, tmp_skills_dir: Path, tmp_path: Path):
         skill_md = tmp_path / "SKILL.md"
         skill_md.write_text("---\nname: ../../evil\n---\n")
-        with pytest.raises(ValueError, match="path traversal"):
+        with pytest.raises(ValueError, match="must not contain"):
             install_from_path(skill_md, tmp_skills_dir)
 
 
