@@ -6,7 +6,7 @@ from pathlib import Path
 
 import questionary
 
-from .config import get_base_dir, get_skills_dir, get_link_target_dir, load_config
+from .config import get_config_path, get_skills_dir, get_link_target_dir, load_config
 from .install import install_from_path
 from .skills import enable_skill, disable_skill, list_skills, linked_skills
 
@@ -21,9 +21,9 @@ subcommands:
   linked                             List linked skills in the current project
 
 global flags:
-  --base-dir DIR    Base directory (overrides $AGISK_BASE_DIR)
-  --force           Overwrite without asking
-  --verbose, -v     Verbose output
+  --config PATH  Config file path (overrides $AGISK_CONFIG_FILE)
+  --force        Overwrite without asking
+  --verbose, -v  Verbose output
 """
 
 
@@ -35,10 +35,10 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "--base-dir",
+        "--config",
         type=str,
         default=None,
-        help="Base directory (overrides $AGISK_BASE_DIR)",
+        help="Config file path (overrides $AGISK_CONFIG_FILE)",
     )
     parser.add_argument(
         "--force",
@@ -77,22 +77,21 @@ def main() -> None:
     verbose = args.verbose
     force = args.force
 
-    # Resolve base_dir
-    if args.base_dir:
-        base_dir = Path(args.base_dir).resolve()
-    else:
-        base_dir = get_base_dir()
+    # Resolve config_path
+    config_path = get_config_path(
+        Path(args.config).resolve() if args.config else None
+    )
 
-    _log(f"Base dir: {base_dir}", verbose)
+    _log(f"Config path: {config_path}", verbose)
 
     # Load config
     try:
-        config = load_config()
+        config = load_config(config_path)
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    skills_dir = get_skills_dir(base_dir, config)
+    skills_dir = get_skills_dir(config, config_path)
     link_target_dir = get_link_target_dir(config)
 
     _log(f"Skills dir: {skills_dir}", verbose)

@@ -68,10 +68,10 @@ def test_parser_force_flag():
     assert args.force is True
 
 
-def test_parser_base_dir():
+def test_parser_config():
     parser = build_parser()
-    args = parser.parse_args(["--base-dir", "/tmp/agisk", "list"])
-    assert args.base_dir == "/tmp/agisk"
+    args = parser.parse_args(["--config", "/tmp/agisk/config.json", "list"])
+    assert args.config == "/tmp/agisk/config.json"
 
 
 def test_parser_verbose():
@@ -123,12 +123,13 @@ class TestUseEnableInteractive:
 
         base_dir = tmp_path / ".agisk"
         base_dir.mkdir()
-        (base_dir / "config.json").write_text(
+        config_path = base_dir / "config.json"
+        config_path.write_text(
             '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
         )
         (base_dir / "skills").mkdir()
 
-        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
 
         with pytest.raises(SystemExit) as exc:
             from agisk.cli import main
@@ -141,7 +142,8 @@ class TestUseEnableInteractive:
         """Select skills via checkbox and enable them."""
         base_dir = tmp_path / ".agisk"
         base_dir.mkdir()
-        (base_dir / "config.json").write_text(
+        config_path = base_dir / "config.json"
+        config_path.write_text(
             '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
         )
         skills_dir = base_dir / "skills"
@@ -156,7 +158,7 @@ class TestUseEnableInteractive:
         monkeypatch.chdir(project)
 
         monkeypatch.setattr("sys.argv", ["agisk", "use"])
-        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
         # Mock questionary to simulate user selecting skill-a
@@ -183,7 +185,8 @@ class TestUseEnableInteractive:
         """When user cancels (None/empty), exit cleanly."""
         base_dir = tmp_path / ".agisk"
         base_dir.mkdir()
-        (base_dir / "config.json").write_text(
+        config_path = base_dir / "config.json"
+        config_path.write_text(
             '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
         )
         skills_dir = base_dir / "skills"
@@ -196,7 +199,7 @@ class TestUseEnableInteractive:
         monkeypatch.chdir(project)
 
         monkeypatch.setattr("sys.argv", ["agisk", "use"])
-        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
         import questionary
@@ -225,10 +228,11 @@ class TestUseEnableInteractive:
 
         base_dir = tmp_path / ".agisk"
         base_dir.mkdir()
-        (base_dir / "config.json").write_text(
+        config_path = base_dir / "config.json"
+        config_path.write_text(
             '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
         )
-        monkeypatch.setenv("AGISK_BASE_DIR", str(base_dir))
+        monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
 
         with pytest.raises(SystemExit) as exc:
             from agisk.cli import main

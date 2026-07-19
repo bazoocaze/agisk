@@ -54,7 +54,7 @@ There is no linter, formatter, or type checker configured. Keep code style consi
 
 Data flow in `main()` (cli.py):
 
-1. Parse args → resolve `base_dir` (flag → env → `~/.agisk`)
+1. Parse args → resolve `config_path` (flag → env → `~/.agisk/config.json`)
 2. `load_config()` → read `config.json`
 3. `get_skills_dir()` → global skills directory
 4. `get_link_target_dir()` → `.agent/skills` (resolved from CWD)
@@ -128,8 +128,6 @@ Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `s
 | `pyproject.toml` | Package config, entry point `agisk = agisk.cli:main` |
 | `README.md` | End-user documentation |
 | `AGENTS.md` | This file |
-| `GOAL.md` | Original requirements (Portuguese) |
-| `PLAN.md` | Implementation plan (Portuguese) |
 
 ### Source — `src/agisk/`
 

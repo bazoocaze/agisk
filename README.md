@@ -81,7 +81,7 @@ agisk linked
 
 | Flag | Description |
 |------|-------------|
-| `--base-dir DIR` | Base directory (takes precedence over `$AGISK_BASE_DIR`) |
+| `--config PATH` | Config file path (takes precedence over `$AGISK_CONFIG_FILE`) |
 | `--force` | Overwrite without asking |
 | `--verbose`, `-v` | Verbose output |
 
@@ -89,7 +89,7 @@ agisk linked
 
 ### Configuration file
 
-The configuration file is at `<base_dir>/config.json` (default: `~/.agisk/config.json`).
+The configuration file is at `~/.agisk/config.json` by default — override with `--config` or `$AGISK_CONFIG_FILE`.
 
 ```json
 {
@@ -102,13 +102,13 @@ The configuration file is at `<base_dir>/config.json` (default: `~/.agisk/config
 
 | Variable | Description |
 |----------|-------------|
-| `AGISK_BASE_DIR` | Base directory (fallback: `~/.agisk/`) |
+| `AGISK_CONFIG_FILE` | Config file path (fallback: `~/.agisk/config.json`) |
 
 ### Resolution priority
 
-1. `--base-dir` (flag)
-2. `$AGISK_BASE_DIR` (environment variable)
-3. `~/.agisk/` (fallback)
+1. `--config` (flag)
+2. `$AGISK_CONFIG_FILE` (environment variable)
+3. `~/.agisk/config.json` (fallback)
 
 ## Directory Structure
 
