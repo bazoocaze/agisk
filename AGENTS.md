@@ -1,203 +1,133 @@
 # AGENTS.md — Agent Integration Guide
 
-This document explains how AI coding agents (like **pi**, Claude Code, Cline, Aider, etc.) can consume and use **agisk** skills.
+This document explains the **agisk** project for AI coding agents that work on this codebase.
 
 ## Agent Instructions
 
-When working on this project, always write commit messages in **English**.
+### Commit Messages
+
+Write all commit messages in **English**.
 
 ### Version Management
 
-The project version is defined in `pyproject.toml` (under `[project]`, field `version`).
-This version is used by `uv tool install` and `uv tool upgrade` to detect updates.
+The project version is in `pyproject.toml` (`[project]` → `version`). It is consumed by `uv tool install` / `uv tool upgrade`.
 
 **Before making any change that will be released or committed**, ask the user:
+
 - Whether the version should be incremented
 - Which part to bump (major, minor, or patch)
 
-If the user says "yes" or specifies a level, update the `version` field in `pyproject.toml`
-according to [Semantic Versioning](https://semver.org/):
-- **patch** (0.1.0 → 0.1.1): bug fixes and minor tweaks
-- **minor** (0.1.0 → 0.2.0): new features, backward compatible
+If the user says "yes" or specifies a level, update `pyproject.toml` according to [Semantic Versioning](https://semver.org/):
+
+- **patch** (1.0.0 → 1.0.1): bug fixes, minor tweaks
+- **minor** (1.0.0 → 1.1.0): new features, backward compatible
 - **major** (1.0.0 → 2.0.0): breaking changes
 
-Do not bump the version without user confirmation.
+Do **not** bump without user confirmation.
 
 ---
 
-## Overview
+## Development Commands
 
-**agisk** manages symbolic links to agent skills. Each skill is a directory containing a `SKILL.md` file (and optionally other files). Agent tools can read these linked skills to discover available capabilities, instructions, or context files.
+```bash
+# Install project in editable mode (with dev deps)
+uv sync --dev
 
-## Skill Structure
+# Run tests
+uv run pytest
+uv run pytest tests/ -v           # verbose
+uv run pytest tests/test_skills.py  # specific file
 
-A skill is a directory placed under the global skills directory (`~/.agisk/skills/` by default) and linked into a project's `.agent/skills/` folder.
+# Run the tool directly
+uv run agisk --help
+uv run python -m agisk list
 
-```
-~/.agisk/skills/
-├── my-coding-skill/
-│   ├── SKILL.md
-│   ├── instructions.md
-│   └── examples/
-│       └── sample.py
-└── my-review-skill/
-    └── SKILL.md
-```
-
-## How Agents Can Consume Skills
-
-### 1. Reading Linked Skills at Startup
-
-An agent can scan `.agent/skills/` to discover which skills are active in the current project:
-
-```python
-from pathlib import Path
-
-skills_dir = Path.cwd() / ".agent" / "skills"
-if skills_dir.exists():
-    active_skills = [p for p in skills_dir.iterdir() if p.is_dir() or p.is_symlink()]
-    for skill in active_skills:
-        skill_md = skill / "SKILL.md"
-        if skill_md.exists():
-            content = skill_md.read_text()
-            # Parse frontmatter, inject instructions, etc.
+# Build
+uv build
 ```
 
-### 2. Parsing SKILL.md Frontmatter
+There is no linter, formatter, or type checker configured. Keep code style consistent with what exists.
 
-Each `SKILL.md` can contain YAML frontmatter for metadata:
-
-```markdown
----
-name: my-coding-skill
-description: Coding guidelines for Python projects
-version: 1
-tags: [python, coding, style]
-model: claude-3.5-sonnet
 ---
 
-# My Coding Skill
+## Architecture
 
-Instructions and context for the agent...
-```
+Data flow in `main()` (cli.py):
 
-Agents should parse the `---` delimited frontmatter (top-level key/value pairs) to extract metadata like `name`, `description`, `tags`, or even a preferred `model`.
+1. Parse args → resolve `base_dir` (flag → env → `~/.agisk`)
+2. `load_config()` → read `config.json`
+3. `get_skills_dir()` → global skills directory
+4. `get_link_target_dir()` → `.agent/skills` (resolved from CWD)
+5. Dispatch to subcommand (`use`/`disable`/`install`/`list`/`linked`)
 
-### 3. Using Skills as Context Directories
+Each subcommand calls the corresponding function in `skills.py` or `install.py`. The `yaml.py` parser is used only by `install.py` to extract `name` from SKILL.md frontmatter.
 
-Skills can bundle multiple files. An agent may:
+---
 
-- Read all `.md` files inside a skill directory as supplemental instructions
-- Use files like `instructions.md`, `rules.yaml`, or `prompts/` as context
-- Treat each skill as a **plugin** that adds capabilities or constraints
+## Adding a New Feature
 
-```python
-for skill in active_skills:
-    for file in skill.rglob("*.md"):
-        content = file.read_text()
-        # Merge into system prompt or context
-```
+### CLI Pattern
 
-### 4. Detecting Skills via Environment or Config
+To add a new subcommand, follow the existing pattern in `cli.py`:
 
-Agents can also discover the global skills directory via the environment variable:
+1. **Document in `_epilog()`** — add a line like `export <skill>    Export skill to a tar file`
+2. **Add an `elif` block** in `main()` after the existing subcommands (before the final `else`)
+3. **Implement the logic** in the appropriate module (`skills.py`, `install.py`, or a new one)
 
-- `AGISK_BASE_DIR` — custom base directory (default: `~/.agisk/`)
+### Module Pattern
 
-```python
-import os
-from pathlib import Path
-
-base_dir = Path(os.environ.get("AGISK_BASE_DIR", Path.home() / ".agisk"))
-skills_dir = base_dir / "skills"
-```
-
-## Recommended Agent Integration Patterns
-
-### Pattern A: Startup Hook
-
-On project open, the agent checks `.agent/skills/` and loads all `SKILL.md` files into its system prompt or context.
+Each function in `skills.py` and `install.py` follows:
 
 ```python
-def load_active_skills():
-    skills_path = Path.cwd() / ".agent" / "skills"
-    if not skills_path.exists():
-        return []
-    contexts = []
-    for entry in skills_path.iterdir():
-        skill_md = entry / "SKILL.md"
-        if skill_md.exists():
-            contexts.append({"name": entry.name, "content": skill_md.read_text()})
-    return contexts
+def function_name(param: str, dir_path: Path, ...) -> bool:
+    _validate_something(param)
+    # do work
+    return True  # or False if no-op
 ```
 
-### Pattern B: Skill as Command Provider
+- Return `bool`: `True` = action performed, `False` = no-op (already exists, cancelled)
+- Raise `FileNotFoundError`, `ValueError`, `NotADirectoryError` for errors
+- Validate skill names with `_validate_skill_name()` or `_validate_no_path_traversal()` (rejects `/`, `\\`, `..`, empty)
 
-A skill directory may contain executable scripts or agent commands. The agent reads a manifest (e.g., `commands.json`) inside the skill and registers them.
-
-```
-my-tool-skill/
-├── SKILL.md
-├── commands.json     # { "command": "...", "handler": "..." }
-└── handlers/
-    └── tool.py
-```
-
-### Pattern C: Layered Skill Composition
-
-Multiple skills can be linked simultaneously. The agent loads them in order, merging or overriding instructions.
+### Error Pattern in CLI
 
 ```python
-# Loading order matters: later skills can override earlier ones
-skills = sorted(active_skills)
-for skill in skills:
-    apply_skill_instructions(skill)
+try:
+    result = some_function(args, ...)
+    if result:
+        print(f"Success: {args}")
+except (FileNotFoundError, ValueError, NotADirectoryError) as e:
+    print(f"Error: {e}", file=sys.stderr)
+    sys.exit(1)
 ```
 
-## Example: pi Agent Integration
+---
 
-For **pi** (the coding agent harness), skills can be discovered automatically:
+## Testing
 
-```yaml
-# pi configuration (config.yaml)
-skills:
-  auto_discover: true
-  directory: .agent/skills
-```
+Fixtures shared via `tests/conftest.py`:
 
-Or loaded explicitly in a pi extension:
+| Fixture | What it provides |
+|---------|-----------------|
+| `tmp_base_dir` | Temporary `~/.agisk` directory (Path) |
+| `tmp_skills_dir` | Global skills subdirectory (Path) |
+| `tmp_config` | config.json fixture (dict) |
+| `sample_skill_dir` | Temp directory with SKILL.md inside (Path) |
+| `sample_skill_md` | Standalone SKILL.md file (Path) |
 
-```python
-# pi extension
-from pathlib import Path
+Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `skills.py`, etc. Use `tmp_path` for isolated filesystem tests.
 
-def load_skills(tool_context):
-    skills_dir = Path.cwd() / ".agent" / "skills"
-    if skills_dir.exists():
-        for skill in skills_dir.iterdir():
-            if skill.is_symlink() or skill.is_dir():
-                skill_md = skill / "SKILL.md"
-                if skill_md.exists():
-                    tool_context.add_context(skill_md.read_text())
-```
-
-## Security Considerations
-
-- **Path traversal**: Agents should validate skill names don't contain `..` or `/` when accessing files
-- **Trust boundary**: Skills are symlinked from a central location. Agents should verify the source is trusted before executing any code from a skill directory
-- **File permissions**: Config files (`config.json`) use permissions `600` (owner-only)
+---
 
 ## Project File Reference
-
-Below is every file in the `agisk` project with a short description of its purpose. An agent can read this summary to quickly understand the codebase layout.
 
 ### Root
 
 | File | Purpose |
 |------|---------|
-| `pyproject.toml` | Python package config (`uv tool install`), entry point `agisk = agisk.cli:main` |
-| `README.md` | End-user documentation (commands, install, config) |
-| `AGENTS.md` | This file — agent integration guide |
+| `pyproject.toml` | Package config, entry point `agisk = agisk.cli:main` |
+| `README.md` | End-user documentation |
+| `AGENTS.md` | This file |
 | `GOAL.md` | Original requirements (Portuguese) |
 | `PLAN.md` | Implementation plan (Portuguese) |
 
@@ -208,27 +138,18 @@ Below is every file in the `agisk` project with a short description of its purpo
 | `__init__.py` | Package marker |
 | `__main__.py` | Entry point for `python -m agisk` |
 | `cli.py` | CLI argument parsing (`argparse`) and `main()` dispatcher |
-| `config.py` | Loads `config.json`, resolves `skills_dir` and `link_target_dir` from env vars, flags, and defaults |
-| `skills.py` | Core operations: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()` |
-| `install.py` | `install_from_path()` — copies a skill directory or `SKILL.md` file into the global skills dir |
-| `yaml.py` | Minimal inline YAML frontmatter parser (`parse_frontmatter`, `get_skill_name_from_skillmd`) |
+| `config.py` | Loads `config.json`, resolves dirs from env vars, flags, and defaults |
+| `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()` |
+| `install.py` | `install_from_path()` — copies skill into global dir |
+| `yaml.py` | Minimal YAML frontmatter parser (`parse_frontmatter`, `get_skill_name_from_skillmd`) |
 
 ### Tests — `tests/`
 
 | File | Purpose |
 |------|---------|
-| `conftest.py` | `pytest` fixtures: `tmp_base_dir`, `tmp_skills_dir`, `tmp_config`, `sample_skill_dir`, `sample_skill_md` |
-| `test_cli.py` | Tests for argument parsing and flags |
-| `test_config.py` | Tests for config loading, env vars, default creation |
-| `test_skills.py` | Tests for enable/disable/list/linked operations |
-| `test_install.py` | Tests for install from directory, file, symlink rejection, overwrite logic |
-| `test_yaml.py` | Tests for frontmatter parsing, edge cases, missing fields |
-
-## Quick Reference
-
-| Path | Purpose |
-|------|---------|
-| `~/.agisk/skills/<name>/` | Global skill storage |
-| `.agent/skills/<name>` | Project-local symlink (created by `agisk use`) |
-| `.agent/skills/<name>/SKILL.md` | Main skill metadata + content |
-| `~/.agisk/config.json` | Tool configuration |
+| `conftest.py` | Shared fixtures (see table above) |
+| `test_cli.py` | CLI argument parsing and flags |
+| `test_config.py` | Config loading, env vars, defaults |
+| `test_skills.py` | Enable/disable/list/linked |
+| `test_install.py` | Install from dir, file, symlink rejection, overwrite |
+| `test_yaml.py` | Frontmatter parsing, edge cases, missing fields |
