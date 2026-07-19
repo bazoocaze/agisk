@@ -56,11 +56,13 @@ Data flow in `main()` (cli.py):
 
 1. Parse args → resolve `config_path` (flag → env → `~/.agisk/config.json`)
 2. `load_config()` → read `config.json`
-3. `get_skills_dir()` → global skills directory
+3. `get_skills_dirs()` → `list[Path]` of global skills directories (config key `skills_dirs`, fallback to deprecated `skills_dir`)
 4. `get_link_target_dir()` → `.agent/skills` (resolved from CWD)
 5. Dispatch to subcommand (`use`/`disable`/`install`/`list`/`linked`)
 
-Each subcommand calls the corresponding function in `skills.py` or `install.py`. The `yaml.py` parser is used only by `install.py` to extract `name` from SKILL.md frontmatter.
+Each subcommand calls the corresponding function in `skills.py`, `ui.py`, or `install.py`. The `yaml.py` parser is used only by `install.py` to extract `name` from SKILL.md frontmatter.
+
+Interactive mode (`use` with no args on a TTY) is handled by `ui.py` via `questionary`.
 
 ---
 
@@ -139,6 +141,7 @@ Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `s
 | `config.py` | Loads `config.json`, resolves dirs from env vars, flags, and defaults |
 | `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()` |
 | `install.py` | `install_from_path()` — copies skill into global dir |
+| `ui.py` | Interactive mode (`questionary` checkbox) for `use` subcommand |
 | `yaml.py` | Minimal YAML frontmatter parser (`parse_frontmatter`, `get_skill_name_from_skillmd`) |
 
 ### Tests — `tests/`

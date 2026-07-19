@@ -16,16 +16,16 @@ class TestListSkills:
     def test_empty_dir(self, tmp_path: Path):
         skills_dir = tmp_path / "skills"
         skills_dir.mkdir()
-        assert list_skills(skills_dir) == []
+        assert list_skills([skills_dir]) == []
 
     def test_non_existent_dir(self, tmp_path: Path):
         skills_dir = tmp_path / "nonexistent"
-        assert list_skills(skills_dir) == []
+        assert list_skills([skills_dir]) == []
 
     def test_with_skills(self, tmp_skills_dir: Path):
         (tmp_skills_dir / "skill-a").mkdir()
         (tmp_skills_dir / "skill-b").mkdir()
-        result = list_skills(tmp_skills_dir)
+        result = list_skills([tmp_skills_dir])
         assert len(result) == 2
         assert result[0].name == "skill-a"
         assert result[1].name == "skill-b"
@@ -33,9 +33,42 @@ class TestListSkills:
     def test_ignores_files(self, tmp_skills_dir: Path):
         (tmp_skills_dir / "skill-a").mkdir()
         (tmp_skills_dir / "not-a-skill.txt").write_text("")
-        result = list_skills(tmp_skills_dir)
+        result = list_skills([tmp_skills_dir])
         assert len(result) == 1
         assert result[0].name == "skill-a"
+
+    def test_multiple_dirs_dedup(self, tmp_path: Path):
+        d1 = tmp_path / "dir1"
+        d2 = tmp_path / "dir2"
+        d1.mkdir()
+        d2.mkdir()
+        (d1 / "skill-a").mkdir()
+        (d1 / "skill-b").mkdir()
+        (d2 / "skill-b").mkdir()  # duplicate
+        (d2 / "skill-c").mkdir()
+        import warnings
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = list_skills([d1, d2])
+        names = [p.name for p in result]
+        assert names == ["skill-a", "skill-b", "skill-c"]
+        assert len(w) == 1
+        assert "skill-b" in str(w[0].message)
+        assert "⚠️" in str(w[0].message)
+
+    def test_multiple_dirs_first_wins(self, tmp_path: Path):
+        d1 = tmp_path / "dir1"
+        d2 = tmp_path / "dir2"
+        d1.mkdir()
+        d2.mkdir()
+        (d1 / "skill-a").mkdir()
+        (d2 / "skill-a").mkdir()
+        import warnings
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            result = list_skills([d1, d2])
+        assert len(result) == 1
+        assert result[0].parent == d1
 
 
 class TestLinkedSkills:
@@ -70,7 +103,7 @@ class TestEnableSkill:
         skill_dir.mkdir()
         link_dir = tmp_path / "links"
         link_dir.mkdir()
-        result = enable_skill("my-skill", tmp_skills_dir, link_dir)
+        result = enable_skill("my-skill", [tmp_skills_dir], link_dir)
         assert result is True
         link_path = link_dir / "my-skill"
         assert link_path.is_symlink()
@@ -80,7 +113,7 @@ class TestEnableSkill:
         (tmp_skills_dir / "my-skill").mkdir()
         link_dir = tmp_path / "links"
         # link_dir does not exist yet
-        result = enable_skill("my-skill", tmp_skills_dir, link_dir)
+        result = enable_skill("my-skill", [tmp_skills_dir], link_dir)
         assert result is True
         assert link_dir.exists()
 
@@ -88,30 +121,30 @@ class TestEnableSkill:
         link_dir = tmp_path / "links"
         link_dir.mkdir()
         with pytest.raises(FileNotFoundError):
-            enable_skill("nonexistent", tmp_skills_dir, link_dir)
+            enable_skill("nonexistent", [tmp_skills_dir], link_dir)
 
     def test_idempotent_no_force(self, tmp_skills_dir: Path, tmp_path: Path):
         (tmp_skills_dir / "my-skill").mkdir()
         link_dir = tmp_path / "links"
         link_dir.mkdir()
-        enable_skill("my-skill", tmp_skills_dir, link_dir)
+        enable_skill("my-skill", [tmp_skills_dir], link_dir)
         # Second time without --force returns False
-        result = enable_skill("my-skill", tmp_skills_dir, link_dir)
+        result = enable_skill("my-skill", [tmp_skills_dir], link_dir)
         assert result is False
 
     def test_force_overwrite(self, tmp_skills_dir: Path, tmp_path: Path):
         (tmp_skills_dir / "my-skill").mkdir()
         link_dir = tmp_path / "links"
         link_dir.mkdir()
-        enable_skill("my-skill", tmp_skills_dir, link_dir)
-        result = enable_skill("my-skill", tmp_skills_dir, link_dir, force=True)
+        enable_skill("my-skill", [tmp_skills_dir], link_dir)
+        result = enable_skill("my-skill", [tmp_skills_dir], link_dir, force=True)
         assert result is True
 
     def test_path_traversal(self, tmp_skills_dir: Path, tmp_path: Path):
         link_dir = tmp_path / "links"
         link_dir.mkdir()
         with pytest.raises(ValueError, match="path traversal"):
-            enable_skill("../evil", tmp_skills_dir, link_dir)
+            enable_skill("../evil", [tmp_skills_dir], link_dir)
 
     def test_multiple_skills(self, tmp_skills_dir: Path, tmp_path: Path):
         (tmp_skills_dir / "skill-a").mkdir()
@@ -119,9 +152,23 @@ class TestEnableSkill:
         link_dir = tmp_path / "links"
         link_dir.mkdir()
         for name in ("skill-a", "skill-b"):
-            result = enable_skill(name, tmp_skills_dir, link_dir)
+            result = enable_skill(name, [tmp_skills_dir], link_dir)
             assert result is True
             assert (link_dir / name).is_symlink()
+
+    def test_enable_from_second_dir(self, tmp_path: Path):
+        d1 = tmp_path / "dir1"
+        d2 = tmp_path / "dir2"
+        d1.mkdir()
+        d2.mkdir()
+        (d2 / "my-skill").mkdir()
+        link_dir = tmp_path / "links"
+        link_dir.mkdir()
+        result = enable_skill("my-skill", [d1, d2], link_dir)
+        assert result is True
+        link_path = link_dir / "my-skill"
+        assert link_path.is_symlink()
+        assert link_path.resolve() == (d2 / "my-skill").resolve()
 
 
 class TestDisableSkill:
@@ -131,7 +178,7 @@ class TestDisableSkill:
         (skills_dir / "my-skill").mkdir()
         link_dir = tmp_path / "links"
         link_dir.mkdir()
-        enable_skill("my-skill", skills_dir, link_dir)
+        enable_skill("my-skill", [skills_dir], link_dir)
         result = disable_skill("my-skill", link_dir)
         assert result is True
         assert not (link_dir / "my-skill").exists()

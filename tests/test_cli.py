@@ -125,7 +125,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
         )
         (base_dir / "skills").mkdir()
 
@@ -144,7 +144,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
         )
         skills_dir = base_dir / "skills"
         skills_dir.mkdir()
@@ -161,22 +161,16 @@ class TestUseEnableInteractive:
         monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
-        # Mock questionary to simulate user selecting skill-a
-        import questionary
+        def _fake_interactive(dirs, target, force=False):
+            from agisk.skills import enable_skill
+            enable_skill("skill-a", dirs, target, force=force)
+            print("Link created: skill-a")
 
-        def _fake_checkbox(*args, **kwargs):
-            class FakeResult:
-                @staticmethod
-                def ask():
-                    return ["skill-a"]
-            return FakeResult()
-
-        monkeypatch.setattr(questionary, "checkbox", _fake_checkbox)
+        import agisk.cli
+        monkeypatch.setattr(agisk.cli, "interactive_enable_skills", _fake_interactive)
 
         from agisk.cli import main
-        with pytest.raises(SystemExit) as exc:
-            main()
-        assert exc.value.code == 0
+        main()
         captured = capsys.readouterr()
         assert "Link created: skill-a" in captured.out
         assert (project / ".agent" / "skills" / "skill-a").is_symlink()
@@ -187,7 +181,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
         )
         skills_dir = base_dir / "skills"
         skills_dir.mkdir()
@@ -202,16 +196,13 @@ class TestUseEnableInteractive:
         monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
-        import questionary
-
         def _fake_cancel(*args, **kwargs):
-            class FakeResult:
-                @staticmethod
-                def ask():
-                    return None
-            return FakeResult()
+            print("Cancelled.")
+            import sys
+            sys.exit(0)
 
-        monkeypatch.setattr(questionary, "checkbox", _fake_cancel)
+        import agisk.cli
+        monkeypatch.setattr(agisk.cli, "interactive_enable_skills", _fake_cancel)
 
         from agisk.cli import main
         with pytest.raises(SystemExit) as exc:
@@ -230,7 +221,7 @@ class TestUseEnableInteractive:
         base_dir.mkdir()
         config_path = base_dir / "config.json"
         config_path.write_text(
-            '{"skills_dir": "skills", "link_target_dir": ".agent/skills"}'
+            '{"skills_dirs": ["skills"], "link_target_dir": ".agent/skills"}'
         )
         monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
 

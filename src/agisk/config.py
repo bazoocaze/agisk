@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 
 def _default_config() -> dict[str, Any]:
     return {
-        "skills_dir": "skills",
+        "skills_dirs": ["skills"],
         "link_target_dir": ".agent/skills",
     }
 
@@ -37,10 +38,28 @@ def load_config(config_path: Path | None = None) -> dict[str, Any]:
     return json.loads(config_path.read_text())
 
 
-def get_skills_dir(config: dict[str, Any], config_path: Path) -> Path:
+def get_skills_dirs(config: dict[str, Any], config_path: Path) -> list[Path]:
     base_dir = config_path.parent.resolve()
-    skills_dir_str = config.get("skills_dir", "skills")
-    p = Path(skills_dir_str)
+
+    dirs: list[str] | None = config.get("skills_dirs")
+    if dirs is not None:
+        if not isinstance(dirs, list):
+            raise ValueError("'skills_dirs' must be a list of paths")
+        return [_resolve_skills_dir(d, base_dir) for d in dirs]
+
+    old = config.get("skills_dir")
+    if old is not None:
+        print(
+            "⚠️  Config key 'skills_dir' is deprecated, use 'skills_dirs' (list)",
+            file=sys.stderr,
+        )
+        return [_resolve_skills_dir(old, base_dir)]
+
+    return [_resolve_skills_dir("skills", base_dir)]
+
+
+def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
+    p = Path(dir_str)
     if p.is_absolute():
         return p.resolve()
     return (base_dir / p).resolve()

@@ -1,20 +1,33 @@
 from __future__ import annotations
 
 import os
+import warnings
 from pathlib import Path
-from typing import Sequence
 
 
-def list_skills(skills_dir: Path) -> list[Path]:
-    """List directories in the global skills directory.
+def list_skills(skills_dirs: list[Path]) -> list[Path]:
+    """List skill directories across multiple global directories.
 
+    Iterates through each directory in order; the first occurrence of a
+    skill name wins.  Emits a warning for each duplicate that is skipped.
     Returns only directories (ignores loose files).
     """
-    if not skills_dir.exists():
-        return []
-    return sorted(
-        [p for p in skills_dir.iterdir() if p.is_dir()]
-    )
+    seen: dict[str, Path] = {}
+    for d in skills_dirs:
+        if not d.exists():
+            continue
+        for p in d.iterdir():
+            if not p.is_dir():
+                continue
+            if p.name in seen:
+                warnings.warn(
+                    f"⚠️  Skill '{p.name}' found in multiple directories; "
+                    f"using '{seen[p.name]}' and ignoring '{p.resolve()}'",
+                    stacklevel=2,
+                )
+            else:
+                seen[p.name] = p
+    return sorted(seen.values(), key=lambda x: x.name)
 
 
 def linked_skills(link_target_dir: Path) -> list[Path]:
@@ -41,24 +54,25 @@ def _validate_skill_name(name: str) -> None:
 
 def enable_skill(
     skill_name: str,
-    skills_dir: Path,
+    skills_dirs: list[Path],
     link_target_dir: Path,
     force: bool = False,
 ) -> bool:
     """Create a symbolic link for the skill in the target directory.
 
+    Searches through ``skills_dirs`` in order and uses the first directory
+    that contains the skill.
+
     Returns True if the link was created, False if it already existed and not --force.
     """
     _validate_skill_name(skill_name)
 
-    source = (skills_dir / skill_name).resolve()
-    if not source.exists():
+    source = _find_skill_dir(skill_name, skills_dirs)
+    if source is None:
+        searched = ", ".join(str(d) for d in skills_dirs)
         raise FileNotFoundError(
-            f"Skill not found: {source}"
-        )
-    if not source.is_dir():
-        raise NotADirectoryError(
-            f"Skill is not a directory: {source}"
+            f"Skill not found in any skills directory: {skill_name}\n"
+            f"Searched: {searched}"
         )
 
     link_target_dir.mkdir(parents=True, exist_ok=True)
@@ -83,6 +97,14 @@ def enable_skill(
         link_path.symlink_to(source)
 
     return True
+
+
+def _find_skill_dir(skill_name: str, skills_dirs: list[Path]) -> Path | None:
+    for d in skills_dirs:
+        candidate = (d / skill_name).resolve()
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return None
 
 
 def disable_skill(

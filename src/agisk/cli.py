@@ -4,11 +4,10 @@ import argparse
 import sys
 from pathlib import Path
 
-import questionary
-
-from .config import get_config_path, get_skills_dir, get_link_target_dir, load_config
+from .config import get_config_path, get_skills_dirs, get_link_target_dir, load_config
 from .install import install_from_path
 from .skills import enable_skill, disable_skill, list_skills, linked_skills
+from .ui import interactive_enable_skills
 
 
 def _epilog() -> str:
@@ -91,10 +90,10 @@ def main() -> None:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
-    skills_dir = get_skills_dir(config, config_path)
+    skills_dirs = get_skills_dirs(config, config_path)
     link_target_dir = get_link_target_dir(config)
 
-    _log(f"Skills dir: {skills_dir}", verbose)
+    _log(f"Skills dirs: {skills_dirs}", verbose)
     _log(f"Link target dir: {link_target_dir}", verbose)
 
     subcommand = args.subcommand
@@ -109,59 +108,8 @@ def main() -> None:
     if sub in ("use", "enable"):
         skill_names = args.args
         if not skill_names and sys.stdin.isatty():
-            # Interactive mode: let user select skills via checkbox
-            all_skills = list_skills(skills_dir)
-            if not all_skills:
-                print("No skills available.", file=sys.stderr)
-                sys.exit(1)
-
-            # Pre-populate based on currently linked skills
-            linked = linked_skills(link_target_dir)
-            linked_names = {l.name for l in linked}
-
-            choices = [
-                questionary.Choice(
-                    title=s.name,
-                    value=s.name,
-                    checked=s.name in linked_names,
-                )
-                for s in all_skills
-            ]
-
-            selected = questionary.checkbox(
-                "Select skills to enable:",
-                choices=choices,
-                instruction="(space to toggle, enter to confirm)",
-            ).ask()
-            if selected is None:
-                print("Cancelled.")
-                sys.exit(0)
-
-            selected_names = set(selected)
-
-            # Enable newly selected skills
-            for skill_name in selected_names - linked_names:
-                try:
-                    result = enable_skill(
-                        skill_name, skills_dir, link_target_dir, force=force
-                    )
-                    if result:
-                        print(f"Link created: {skill_name}")
-                except (FileNotFoundError, NotADirectoryError, ValueError) as e:
-                    print(f"Error enabling '{skill_name}': {e}", file=sys.stderr)
-                    sys.exit(1)
-
-            # Disable skills that were deselected
-            for skill_name in linked_names - selected_names:
-                try:
-                    result = disable_skill(skill_name, link_target_dir)
-                    if result:
-                        print(f"Link removed: {skill_name}")
-                except (ValueError, FileNotFoundError) as e:
-                    print(f"Error disabling '{skill_name}': {e}", file=sys.stderr)
-                    sys.exit(1)
-
-            sys.exit(0)
+            interactive_enable_skills(skills_dirs, link_target_dir, force=force)
+            return
 
         if not skill_names:
             print("Error: use/enable requires at least one skill", file=sys.stderr)
@@ -169,7 +117,7 @@ def main() -> None:
 
         for skill_name in skill_names:
             try:
-                result = enable_skill(skill_name, skills_dir, link_target_dir, force=force)
+                result = enable_skill(skill_name, skills_dirs, link_target_dir, force=force)
                 if result:
                     print(f"Link created: {skill_name}")
                 else:
@@ -204,8 +152,9 @@ def main() -> None:
             print("Error: install requires a path", file=sys.stderr)
             sys.exit(1)
         path = args.args[0]
+        install_dir = skills_dirs[0] if skills_dirs else Path()
         try:
-            result = install_from_path(path, skills_dir, force=force, interactive=not force)
+            result = install_from_path(path, install_dir, force=force, interactive=not force)
             if result:
                 print(f"Skill installed: {path}")
             else:
@@ -217,7 +166,7 @@ def main() -> None:
 
     # --- list ---
     elif sub == "list":
-        skills = list_skills(skills_dir)
+        skills = list_skills(skills_dirs)
         if not skills:
             print("No skills found.")
         else:
