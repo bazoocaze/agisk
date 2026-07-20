@@ -1,5 +1,7 @@
 # agisk
 
+[![CI](https://github.com/bazoocaze/agisk/actions/workflows/ci.yml/badge.svg)](https://github.com/bazoocaze/agisk/actions/workflows/ci.yml)
+
 **agisk** (Agent + Skills) — Symbolic link manager for agent skills.
 
 Allows managing agent skills in a centralized way, with installation, listing, and
