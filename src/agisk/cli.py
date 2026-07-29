@@ -18,7 +18,7 @@ subcommands:
   install <path>                     Copy a skill to the global directory
   list                               List available skills in the global directory
   linked                             List linked skills in the current project
-  validate                           Validate all installed skills
+  doctor                             Validate all installed skills (diagnose issues)
 
 global flags:
   --config PATH  Config file path (default: ~/.agisk/config.json, overrides $AGISK_CONFIG_FILE)
@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "subcommand",
         nargs="?",
-        help="Subcommand: use|enable, disable, install, list, linked, validate",
+        help="Subcommand: use|enable, disable, install, list, linked, doctor",
     )
     parser.add_argument(
         "args",
@@ -193,8 +193,8 @@ def main() -> None:
                     line += " ⚠️"
                 print(line)
 
-    # --- validate ---
-    elif sub == "validate":
+    # --- doctor ---
+    elif sub == "doctor":
         skills = list_skills(skills_dirs)
         duplicates = find_duplicates(skills_dirs)
         all_valid = True

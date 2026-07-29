@@ -79,6 +79,15 @@ Lists the skills currently linked in the current project.
 agisk linked
 ```
 
+### `agisk doctor`
+
+Validates all installed skills, showing errors, warnings, and duplicate names across
+multiple skills directories.
+
+```bash
+agisk doctor
+```
+
 ## Flags
 
 | Flag | Description |
@@ -86,6 +95,18 @@ agisk linked
 | `--config PATH` | Config file path (takes precedence over `$AGISK_CONFIG_FILE`) |
 | `--force` | Overwrite without asking |
 | `--verbose`, `-v` | Verbose output |
+
+```bash
+# Force overwrite an existing link
+agisk use --force my-skill
+
+# Force overwrite on install
+agisk install --force ~/projects/my-skill
+
+# Verbose output
+agisk --verbose list
+agisk -v linked
+```
 
 ## Configuration
 
@@ -95,10 +116,12 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 
 ```json
 {
-  "skills_dir": "skills",
+  "skills_dirs": ["skills"],
   "link_target_dir": ".agents/skills"
 }
 ```
+
+> **Note:** The key `skills_dir` (singular, string) is deprecated. Use `skills_dirs` (plural, list) instead.
 
 ### Environment variables
 
@@ -156,9 +179,8 @@ directory when installed from a standalone `SKILL.md` file.
 ```bash
 git clone https://github.com/usuario/agisk
 cd agisk
-uv venv
-uv pip install -e .
-pytest tests/
+uv sync --dev
+uv run pytest
 ```
 
 ## License

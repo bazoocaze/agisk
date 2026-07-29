@@ -118,7 +118,7 @@ def test_parser_help(capsys):
     assert "install" in captured.out
     assert "list" in captured.out
     assert "linked" in captured.out
-    assert "validate" in captured.out
+    assert "doctor" in captured.out
 
 
 class TestUseEnableInteractive:
