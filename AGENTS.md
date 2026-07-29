@@ -2,7 +2,31 @@
 
 This document explains the **agisk** project for AI coding agents that work on this codebase.
 
-## Agent Instructions
+## Design Principles
+
+agisk should remain:
+
+- **Small** — focused scope, minimal surface area
+- **Dependency-light** — prefer the Python standard library
+- **Cross-platform** — works on Linux, macOS, Windows
+- **Predictable** — same input, same output
+- **Script-friendly** — CLI works non-interactively, exit codes are meaningful
+- **Backward compatible** — existing configs and workflows keep working
+
+These principles guide decisions when two implementations are equally correct.
+
+## Priority
+
+When instructions conflict, follow this order:
+
+1. User request
+2. System/developer instructions
+3. This AGENTS.md
+4. Existing project conventions
+
+---
+
+## Hard Requirements
 
 ### Commit Messages
 
@@ -25,6 +49,61 @@ If the user says "yes" or specifies a level, update `pyproject.toml` according t
 
 Do **not** bump without user confirmation.
 
+### Compatibility
+
+Unless requested, preserve:
+
+- CLI compatibility (commands, flags, exit codes)
+- Existing config keys (`config.json` schema)
+- Existing behavior (deprecated features should remain functional whenever practical)
+
+### Dependencies
+
+Avoid adding dependencies. Prefer the Python standard library unless a dependency is explicitly requested or provides a significant benefit.
+
+---
+
+## Development Conventions
+
+### Code Style
+
+There is no linter, formatter, or type checker configured. Keep code style consistent with what exists.
+
+### Extending Modules
+
+Prefer extending an existing module before creating a new one. Create a new module only when it improves cohesion.
+
+### Refactoring
+
+Refactor only when it directly supports the requested change. Avoid opportunistic cleanup.
+
+### Avoid Unnecessary Changes
+
+Do not:
+
+- Rename public commands or functions
+- Reformat unrelated files
+- Move modules without request
+- Change public behavior while refactoring
+- Introduce new dependencies unless requested
+
+### Documentation
+
+If a CLI command changes:
+
+- update `README.md`
+- update help text (argparse descriptions, `_epilog()`)
+- update examples in documentation
+
+### Tests
+
+If changing behavior:
+
+- update existing tests, or
+- add new tests
+
+Do not remove tests unless requested.
+
 ---
 
 ## Development Commands
@@ -46,13 +125,27 @@ uv run python -m agisk list
 uv build
 ```
 
-There is no linter, formatter, or type checker configured. Keep code style consistent with what exists.
-
 ---
 
 ## Architecture
 
-Data flow in `main()` (cli.py):
+### High-level data flow
+
+```
+CLI (argparse)
+  ↓
+config (config.json + env vars + flags)
+  ↓
+resolve directories (skills_dirs, link_target_dirs)
+  ↓
+dispatch to subcommand
+  ↓
+business logic (skills.py, install.py, ui.py)
+  ↓
+filesystem (symlinks, dirs, SKILL.md files)
+```
+
+### Data flow in `main()` (cli.py)
 
 1. Parse args → resolve `config_path` (flag → env → `~/.agisk/config.json`)
 2. `load_config()` → read `config.json`
