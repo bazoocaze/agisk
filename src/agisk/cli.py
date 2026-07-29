@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .config import get_config_path, get_skills_dirs, get_link_target_dirs, load_config
 from .install import install_from_path
-from .skills import enable_skill, disable_skill, list_skills, linked_skills, find_duplicates
+from .skills import enable_skill, disable_skill, list_skills, active_skills, find_duplicates
 from .ui import interactive_enable_skills
 
 
@@ -17,7 +17,7 @@ subcommands:
   disable <skill> [<skill> ...]      Remove symbolic link(s) for skill(s)
   install <path>                     Copy a skill to the global directory
   list                               List available skills in the global directory
-  linked                             List linked skills in the current project
+  active                             List active skills in the current project
   doctor                             Validate all installed skills (diagnose issues)
 
 global flags:
@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "subcommand",
         nargs="?",
-        help="Subcommand: use|enable, disable, install, list, linked, doctor",
+        help="Subcommand: use|enable, disable, install, list, active, doctor",
     )
     parser.add_argument(
         "args",
@@ -178,11 +178,11 @@ def main() -> None:
                     line += f" — {s.description}"
                 print(line)
 
-    # --- linked ---
-    elif sub == "linked":
-        links = linked_skills(link_target_dirs)
+    # --- active ---
+    elif sub in ("active", "linked"):
+        links = active_skills(link_target_dirs)
         if not links:
-            print("No linked skills.")
+            print("No active skills.")
         else:
             for s in links:
                 target = s.path.resolve()

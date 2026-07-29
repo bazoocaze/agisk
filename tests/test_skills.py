@@ -8,7 +8,7 @@ from agisk.skills import (
     enable_skill,
     disable_skill,
     list_skills,
-    linked_skills,
+    active_skills,
 )
 
 
@@ -62,15 +62,15 @@ class TestListSkills:
         assert result[0].path.parent == d1
 
 
-class TestLinkedSkills:
+class TestActiveSkills:
     def test_empty_dir(self, tmp_path: Path):
         link_dir = tmp_path / "links"
         link_dir.mkdir()
-        assert linked_skills([link_dir]) == []
+        assert active_skills([link_dir]) == []
 
     def test_non_existent_dir(self, tmp_path: Path):
         link_dir = tmp_path / "nonexistent"
-        assert linked_skills([link_dir]) == []
+        assert active_skills([link_dir]) == []
 
     def test_with_links(self, tmp_path: Path):
         skills_dir = tmp_path / "skills"
@@ -81,7 +81,7 @@ class TestLinkedSkills:
         link_dir.mkdir()
         (link_dir / "skill-a").symlink_to(skills_dir / "skill-a")
         (link_dir / "skill-b").symlink_to(skills_dir / "skill-b")
-        result = linked_skills([link_dir])
+        result = active_skills([link_dir])
         assert len(result) == 2
         names = [s.dir_name for s in result]
         assert "skill-a" in names
@@ -97,7 +97,7 @@ class TestLinkedSkills:
         link_dir2.mkdir()
         (link_dir1 / "skill-a").symlink_to(skills_dir / "skill-a")
         (link_dir2 / "skill-a").symlink_to(skills_dir / "skill-a")
-        result = linked_skills([link_dir1, link_dir2])
+        result = active_skills([link_dir1, link_dir2])
         assert len(result) == 1
         assert result[0].dir_name == "skill-a"
 
@@ -112,7 +112,7 @@ class TestLinkedSkills:
         link_dir2.mkdir()
         (link_dir1 / "skill-a").symlink_to(skills_dir / "skill-a")
         (link_dir2 / "skill-b").symlink_to(skills_dir / "skill-b")
-        result = linked_skills([link_dir1, link_dir2])
+        result = active_skills([link_dir1, link_dir2])
         assert len(result) == 2
         names = [s.dir_name for s in result]
         assert "skill-a" in names

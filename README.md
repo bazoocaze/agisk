@@ -153,12 +153,13 @@ Lists the skills available in the global directory.
 agisk list
 ```
 
-### `agisk linked`
+### `agisk active`
 
-Lists the skills currently linked in the current project.
+Lists the skills currently active (linked) in the current project.
 
 ```bash
-agisk linked
+agisk active
+# `agisk linked` also works (compatibility alias)
 ```
 
 ### `agisk doctor`
@@ -189,7 +190,7 @@ agisk install --force ~/projects/my-skill
 
 # Verbose output
 agisk --verbose list
-agisk -v linked
+agisk -v active
 ```
 
 ---
@@ -203,13 +204,9 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 ```json
 {
   "skills_dirs": ["skills"],
-  "link_target_dir": ".agents/skills",
   "link_target_dirs": [".agents/skills", ".agents/pi-skills"]
 }
 ```
-
-> **Note:** The key `skills_dir` (singular, string) is deprecated. Use `skills_dirs` (plural, list) instead.
-> The key `link_target_dir` (string) is still supported. For multiple link targets, use `link_target_dirs` (list of strings). When both are present, `link_target_dirs` takes precedence.
 
 ### Environment variables
 

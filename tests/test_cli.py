@@ -56,10 +56,10 @@ def test_parser_list():
     assert args.args == []
 
 
-def test_parser_linked():
+def test_parser_active():
     parser = build_parser()
-    args = parser.parse_args(["linked"])
-    assert args.subcommand == "linked"
+    args = parser.parse_args(["active"])
+    assert args.subcommand == "active"
 
 
 def test_parser_validate():
@@ -117,7 +117,7 @@ def test_parser_help(capsys):
     assert "disable" in captured.out
     assert "install" in captured.out
     assert "list" in captured.out
-    assert "linked" in captured.out
+    assert "active" in captured.out
     assert "doctor" in captured.out
 
 

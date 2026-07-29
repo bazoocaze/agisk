@@ -6,7 +6,7 @@ from pathlib import Path
 import questionary
 
 from .skill import Skill
-from .skills import enable_skill, disable_skill, list_skills, linked_skills
+from .skills import enable_skill, disable_skill, list_skills, active_skills
 
 
 def interactive_enable_skills(
@@ -31,7 +31,7 @@ def _interactive_enable_skills_impl(
         print("No skills available.", file=sys.stderr)
         sys.exit(1)
 
-    linked = linked_skills(link_target_dirs)
+    linked = active_skills(link_target_dirs)
     linked_names = {s.dir_name for s in linked}
 
     choices = [

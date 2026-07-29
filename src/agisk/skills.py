@@ -24,7 +24,7 @@ def list_skills(skills_dirs: list[Path]) -> list[Skill]:
     )
 
 
-def linked_skills(link_target_dirs: list[Path]) -> list[Skill]:
+def active_skills(link_target_dirs: list[Path]) -> list[Skill]:
     seen: set[str] = set()
     result: list[Skill] = []
     for link_target_dir in link_target_dirs:
