@@ -2,20 +2,94 @@
 
 [![CI](https://github.com/bazoocaze/agisk/actions/workflows/ci.yml/badge.svg)](https://github.com/bazoocaze/agisk/actions/workflows/ci.yml)
 
-**agisk** (Agent + Skills) — Symbolic link manager for agent skills.
+**agisk** (Agent + Skills) — A package manager for AI agent skills.
 
-Allows managing agent skills in a centralized way, with installation, listing, and
-activation via symbolic links.
+> **Install AI agent skills once. Reuse them across every project and every coding agent.**
+
+## Quick Start
+
+```bash
+# 1. Install agisk
+uv tool install git+https://github.com/bazoocaze/agisk
+
+# 2. Install a skill
+agisk install ~/Downloads/my-skill
+
+# 3. Activate it in your project
+cd my-project
+agisk use my-skill
+
+# 4. See the result
+tree .agents
+```
+
+In under 30 seconds you have a skill installed and linked in your project.
+
+---
+
+## What problem does it solve?
+
+**Without agisk**
+
+```
+~/.claude/skills/
+~/.pi/skills/
+~/.opencode/skills/
+project-a/.agents/skills/
+project-b/.agents/skills/
+
+Everything gets duplicated.
+```
+
+**With agisk**
+
+```
+~/.agisk/skills/
+        │
+        ├── python
+        ├── aws
+        └── docker
+
+Projects only contain symbolic links → no duplication.
+```
+
+Agent skills are reusable prompt packages (usually distributed as a `SKILL.md` file plus optional resources) consumed by AI coding agents. Without a manager, you copy them into every project and every agent's config — and updating means updating each copy.
+
+**agisk** installs, validates and activates agent skills by creating symbolic links,
+allowing multiple agents to share the same skill library without duplication.
+
+### Compatible with
+
+| Agent | How it reads skills |
+|-------|-------------------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) | `.claude/skills/` directory |
+| [Pi](https://github.com/earendil-works/pi-coding-agent) | `.pi/skills/` directory |
+| [OpenCode](https://github.com/sst/opencode) | `.opencode/skills/` directory |
+| Any tool with `skills_dirs` config | Configurable via `link_target_dirs` |
+
+---
 
 ## Installation
 
 ```bash
 # Via uv (recommended)
-uv tool install git+https://github.com/usuario/agisk
+uv tool install git+https://github.com/bazoocaze/agisk
 
 # Or via pip
-pip install git+https://github.com/usuario/agisk
+pip install git+https://github.com/bazoocaze/agisk
 ```
+
+---
+
+## Why symbolic links?
+
+- **Single source of truth** — install once, update once, reuse everywhere.
+- **Zero duplication** — no copying skills across projects or agent configs.
+- **Instant updates** — update the skill in one place, all projects pick it up.
+- **Git-friendly** — links are small text files, not bloated directories.
+- **No vendor lock-in** — works with Claude Code, Pi, OpenCode, and any tool that reads a skills directory.
+
+---
 
 ## Commands
 
@@ -27,10 +101,18 @@ Creates symbolic link(s) of the skill(s) in the current project.
 skills, pre-populated with currently linked ones. Toggle with space, confirm with
 enter — links are created/removed accordingly.
 
-```bash
-# Interactive mode — select skills via checkbox
-agisk use
+```
+$ agisk use
 
+[ ] docker
+[x] python
+[ ] rust
+[x] aws
+
+Space: toggle  |  Enter: confirm
+```
+
+```bash
 # Link specific skill(s)
 agisk use my-coding-skill
 agisk enable my-coding-skill
@@ -88,6 +170,8 @@ multiple skills directories.
 agisk doctor
 ```
 
+---
+
 ## Flags
 
 | Flag | Description |
@@ -107,6 +191,8 @@ agisk install --force ~/projects/my-skill
 agisk --verbose list
 agisk -v linked
 ```
+
+---
 
 ## Configuration
 
@@ -137,27 +223,31 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 2. `$AGISK_CONFIG_FILE` (environment variable)
 3. `~/.agisk/config.json` (fallback)
 
+---
+
 ## Directory Structure
 
 ```
 ~/.agisk/                  # Base directory
+│
 ├── skills/                # Global skills directory
-│   ├── my-skill-1/
-│   │   ├── SKILL.md
-│   │   └── ...
-│   └── my-skill-2/
-│       ├── SKILL.md
-│       └── ...
+│   ├── python/
+│   ├── aws/
+│   └── docker/
+│
 └── config.json            # Tool configuration
-```
 
-```
+
 my-project/                # Current project ($PWD)
+│
 └── .agents/
     └── skills/            # Symbolic links (created by agisk use)
-        ├── my-skill-1 -> ~/.agisk/skills/my-skill-1
-        └── my-skill-2 -> ~/.agisk/skills/my-skill-2
+        ├── python -> ~/.agisk/skills/python
+        ├── aws    -> ~/.agisk/skills/aws
+        └── docker -> ~/.agisk/skills/docker
 ```
+
+---
 
 ## SKILL.md Format
 
@@ -176,14 +266,18 @@ Skill content...
 The `name` field in the frontmatter is used by `agisk install` to name the skill
 directory when installed from a standalone `SKILL.md` file.
 
+---
+
 ## Development
 
 ```bash
-git clone https://github.com/usuario/agisk
+git clone https://github.com/bazoocaze/agisk
 cd agisk
 uv sync --dev
 uv run pytest
 ```
+
+---
 
 ## License
 
