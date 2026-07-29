@@ -57,7 +57,7 @@ Data flow in `main()` (cli.py):
 1. Parse args → resolve `config_path` (flag → env → `~/.agisk/config.json`)
 2. `load_config()` → read `config.json`
 3. `get_skills_dirs()` → `list[Path]` of global skills directories (config key `skills_dirs`, fallback to deprecated `skills_dir`)
-4. `get_link_target_dir()` → `.agents/skills` (resolved from CWD)
+4. `get_link_target_dirs()` → `list[Path]` of link target directories (config key `link_target_dirs` (list) or fallback to `link_target_dir` (string))
 5. Dispatch to subcommand (`use`/`disable`/`install`/`list`/`linked`/`doctor`)
 
 Each subcommand calls the corresponding function in `skills.py`, `ui.py`, or `install.py`. The `yaml.py` parser is used by `install.py` and `skill.py` to extract `name` from SKILL.md frontmatter.
@@ -139,9 +139,9 @@ Tests mirror source modules: `test_cli.py` ↔ `cli.py`, `test_skills.py` ↔ `s
 | `__init__.py` | Package marker |
 | `__main__.py` | Entry point for `python -m agisk` |
 | `cli.py` | CLI argument parsing (`argparse`) and `main()` dispatcher |
-| `config.py` | Loads `config.json`, resolves dirs from env vars, flags, and defaults |
+| `config.py` | Loads `config.json`, resolves dirs from env vars, flags, and defaults. `get_link_target_dirs()` returns `list[Path]` — reads `link_target_dirs` (list) or falls back to `link_target_dir` (string) |
 | `skill.py` | `Skill` dataclass, `Skill.from_dir()`, `validate_skill_name()` |
-| `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()`, `find_duplicates()` (used by `doctor`) |
+| `skills.py` | Core: `enable_skill()`, `disable_skill()`, `list_skills()`, `linked_skills()`, `find_duplicates()` (used by `doctor`). All functions accept `link_target_dirs: list[Path]` for multiple link targets |
 | `install.py` | `install_from_path()` — copies skill into global dir |
 | `ui.py` | Interactive mode (`questionary` checkbox) for `use` subcommand |
 | `yaml.py` | Minimal YAML frontmatter parser (`parse_frontmatter`, `get_skill_name_from_skillmd`) |

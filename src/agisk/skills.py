@@ -24,37 +24,42 @@ def list_skills(skills_dirs: list[Path]) -> list[Skill]:
     )
 
 
-def linked_skills(link_target_dir: Path) -> list[Skill]:
-    if not link_target_dir.exists():
-        return []
+def linked_skills(link_target_dirs: list[Path]) -> list[Skill]:
+    seen: set[str] = set()
     result: list[Skill] = []
-    for p in sorted(link_target_dir.iterdir()):
-        if not p.is_symlink():
+    for link_target_dir in link_target_dirs:
+        if not link_target_dir.exists():
             continue
-        target = p.resolve()
-        if not target.exists():
-            result.append(
-                Skill(
-                    path=p,
-                    dir_name=p.name,
-                    name=p.name,
-                    description="",
-                    has_skill_md=False,
-                    has_frontmatter=False,
-                    raw_frontmatter={},
-                    errors=["Broken symlink: target does not exist"],
+        for p in sorted(link_target_dir.iterdir()):
+            if not p.is_symlink():
+                continue
+            if p.name in seen:
+                continue
+            seen.add(p.name)
+            target = p.resolve()
+            if not target.exists():
+                result.append(
+                    Skill(
+                        path=p,
+                        dir_name=p.name,
+                        name=p.name,
+                        description="",
+                        has_skill_md=False,
+                        has_frontmatter=False,
+                        raw_frontmatter={},
+                        errors=["Broken symlink: target does not exist"],
+                    )
                 )
-            )
-        else:
-            skill = Skill.from_dir(target)
-            result.append(skill)
+            else:
+                skill = Skill.from_dir(target)
+                result.append(skill)
     return result
 
 
 def enable_skill(
     skill_name: str,
     skills_dirs: list[Path],
-    link_target_dir: Path,
+    link_target_dirs: list[Path],
     force: bool = False,
 ) -> bool:
     validate_skill_name(skill_name)
@@ -67,26 +72,30 @@ def enable_skill(
             f"Searched: {searched}"
         )
 
-    link_target_dir.mkdir(parents=True, exist_ok=True)
-    link_path = link_target_dir / skill_name
+    any_created = False
+    for link_target_dir in link_target_dirs:
+        link_target_dir.mkdir(parents=True, exist_ok=True)
+        link_path = link_target_dir / skill_name
 
-    if link_path.is_symlink() or link_path.exists():
-        if not force:
-            return False
-        if link_path.is_symlink():
-            link_path.unlink()
-        elif link_path.is_dir():
-            link_path.rmdir()
-        else:
-            link_path.unlink()
+        if link_path.is_symlink() or link_path.exists():
+            if not force:
+                continue
+            if link_path.is_symlink():
+                link_path.unlink()
+            elif link_path.is_dir():
+                link_path.rmdir()
+            else:
+                link_path.unlink()
 
-    try:
-        rel_source = os.path.relpath(source, link_target_dir)
-        link_path.symlink_to(rel_source)
-    except ValueError:
-        link_path.symlink_to(source)
+        try:
+            rel_source = os.path.relpath(source, link_target_dir)
+            link_path.symlink_to(rel_source)
+        except ValueError:
+            link_path.symlink_to(source)
 
-    return True
+        any_created = True
+
+    return any_created
 
 
 def _find_skill_dir(skill_name: str, skills_dirs: list[Path]) -> Path | None:
@@ -99,27 +108,31 @@ def _find_skill_dir(skill_name: str, skills_dirs: list[Path]) -> Path | None:
 
 def disable_skill(
     skill_name: str,
-    link_target_dir: Path,
+    link_target_dirs: list[Path],
 ) -> bool:
     validate_skill_name(skill_name)
 
-    link_path = link_target_dir / skill_name
+    any_removed = False
+    for link_target_dir in link_target_dirs:
+        link_path = link_target_dir / skill_name
 
-    try:
-        is_sym = link_path.is_symlink()
-    except (OSError, FileNotFoundError):
-        is_sym = False
+        try:
+            is_sym = link_path.is_symlink()
+        except (OSError, FileNotFoundError):
+            is_sym = False
 
-    if not is_sym and not link_path.exists():
-        return False
+        if not is_sym and not link_path.exists():
+            continue
 
-    if is_sym:
-        link_path.unlink()
-        return True
+        if is_sym:
+            link_path.unlink()
+            any_removed = True
+        else:
+            raise ValueError(
+                f"{link_path} exists but is not a symbolic link. Remove manually."
+            )
 
-    raise ValueError(
-        f"{link_path} exists but is not a symbolic link. Remove manually."
-    )
+    return any_removed
 
 
 def find_duplicates(skills_dirs: list[Path]) -> list[tuple[str, list[Path]]]:

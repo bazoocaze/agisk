@@ -169,9 +169,9 @@ class TestUseEnableInteractive:
         monkeypatch.setenv("AGISK_CONFIG_FILE", str(config_path))
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
 
-        def _fake_interactive(dirs, target, force=False):
+        def _fake_interactive(dirs, target_dirs, force=False):
             from agisk.skills import enable_skill
-            enable_skill("skill-a", dirs, target, force=force)
+            enable_skill("skill-a", dirs, target_dirs, force=force)
             print("Link created: skill-a")
 
         import agisk.cli

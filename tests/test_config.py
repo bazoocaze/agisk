@@ -10,7 +10,7 @@ from agisk.config import (
     load_config,
     get_config_path,
     get_skills_dirs,
-    get_link_target_dir,
+    get_link_target_dirs,
 )
 
 
@@ -136,15 +136,37 @@ def test_get_skills_dirs_default(tmp_path: Path):
     assert result == [base / "skills"]
 
 
-def test_get_link_target_dir_default():
+def test_get_link_target_dirs_default():
     config = {}
-    expected = Path.cwd() / ".agents" / "skills"
-    assert get_link_target_dir(config) == expected.resolve()
+    expected = (Path.cwd() / ".agents" / "skills").resolve()
+    assert get_link_target_dirs(config) == [expected]
 
 
-def test_get_link_target_dir_custom():
+def test_get_link_target_dirs_custom_string():
     config = {"link_target_dir": ".my-custom/skills"}
-    expected = Path.cwd() / ".my-custom" / "skills"
-    assert get_link_target_dir(config) == expected.resolve()
+    expected = (Path.cwd() / ".my-custom" / "skills").resolve()
+    assert get_link_target_dirs(config) == [expected]
+
+
+def test_get_link_target_dirs_list():
+    config = {"link_target_dirs": [".agents/skills", ".agents/pi-skills"]}
+    expected = [
+        (Path.cwd() / ".agents" / "skills").resolve(),
+        (Path.cwd() / ".agents" / "pi-skills").resolve(),
+    ]
+    assert get_link_target_dirs(config) == expected
+
+
+def test_get_link_target_dirs_list_overrides_string():
+    """When both link_target_dirs and link_target_dir are present, list wins."""
+    config = {
+        "link_target_dir": ".old/skills",
+        "link_target_dirs": [".agents/skills", ".agents/pi-skills"],
+    }
+    expected = [
+        (Path.cwd() / ".agents" / "skills").resolve(),
+        (Path.cwd() / ".agents" / "pi-skills").resolve(),
+    ]
+    assert get_link_target_dirs(config) == expected
 
 

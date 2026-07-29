@@ -117,11 +117,13 @@ The configuration file is at `~/.agisk/config.json` by default — override with
 ```json
 {
   "skills_dirs": ["skills"],
-  "link_target_dir": ".agents/skills"
+  "link_target_dir": ".agents/skills",
+  "link_target_dirs": [".agents/skills", ".agents/pi-skills"]
 }
 ```
 
 > **Note:** The key `skills_dir` (singular, string) is deprecated. Use `skills_dirs` (plural, list) instead.
+> The key `link_target_dir` (string) is still supported. For multiple link targets, use `link_target_dirs` (list of strings). When both are present, `link_target_dirs` takes precedence.
 
 ### Environment variables
 

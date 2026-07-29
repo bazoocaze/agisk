@@ -11,11 +11,11 @@ from .skills import enable_skill, disable_skill, list_skills, linked_skills
 
 def interactive_enable_skills(
     skills_dirs: list[Path],
-    link_target_dir: Path,
+    link_target_dirs: list[Path],
     force: bool = False,
 ) -> None:
     try:
-        _interactive_enable_skills_impl(skills_dirs, link_target_dir, force=force)
+        _interactive_enable_skills_impl(skills_dirs, link_target_dirs, force=force)
     except KeyboardInterrupt:
         print("Cancelled.")
         sys.exit(0)
@@ -23,7 +23,7 @@ def interactive_enable_skills(
 
 def _interactive_enable_skills_impl(
     skills_dirs: list[Path],
-    link_target_dir: Path,
+    link_target_dirs: list[Path],
     force: bool = False,
 ) -> None:
     all_skills = list_skills(skills_dirs)
@@ -31,7 +31,7 @@ def _interactive_enable_skills_impl(
         print("No skills available.", file=sys.stderr)
         sys.exit(1)
 
-    linked = linked_skills(link_target_dir)
+    linked = linked_skills(link_target_dirs)
     linked_names = {s.dir_name for s in linked}
 
     choices = [
@@ -57,7 +57,7 @@ def _interactive_enable_skills_impl(
     for skill_name in selected_names - linked_names:
         try:
             result = enable_skill(
-                skill_name, skills_dirs, link_target_dir, force=force
+                skill_name, skills_dirs, link_target_dirs, force=force
             )
             if result:
                 print(f"Link created: {skill_name}")
@@ -67,7 +67,7 @@ def _interactive_enable_skills_impl(
 
     for skill_name in linked_names - selected_names:
         try:
-            result = disable_skill(skill_name, link_target_dir)
+            result = disable_skill(skill_name, link_target_dirs)
             if result:
                 print(f"Link removed: {skill_name}")
         except (ValueError, FileNotFoundError) as e:

@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .config import get_config_path, get_skills_dirs, get_link_target_dir, load_config
+from .config import get_config_path, get_skills_dirs, get_link_target_dirs, load_config
 from .install import install_from_path
 from .skills import enable_skill, disable_skill, list_skills, linked_skills, find_duplicates
 from .ui import interactive_enable_skills
@@ -90,10 +90,10 @@ def main() -> None:
         sys.exit(1)
 
     skills_dirs = get_skills_dirs(config, config_path)
-    link_target_dir = get_link_target_dir(config)
+    link_target_dirs = get_link_target_dirs(config)
 
     _log(f"Skills dirs: {skills_dirs}", verbose)
-    _log(f"Link target dir: {link_target_dir}", verbose)
+    _log(f"Link target dirs: {link_target_dirs}", verbose)
 
     subcommand = args.subcommand
 
@@ -107,7 +107,7 @@ def main() -> None:
     if sub in ("use", "enable"):
         skill_names = args.args
         if not skill_names and sys.stdin.isatty():
-            interactive_enable_skills(skills_dirs, link_target_dir, force=force)
+            interactive_enable_skills(skills_dirs, link_target_dirs, force=force)
             return
 
         if not skill_names:
@@ -116,7 +116,7 @@ def main() -> None:
 
         for skill_name in skill_names:
             try:
-                result = enable_skill(skill_name, skills_dirs, link_target_dir, force=force)
+                result = enable_skill(skill_name, skills_dirs, link_target_dirs, force=force)
                 if result:
                     print(f"Link created: {skill_name}")
                 else:
@@ -136,7 +136,7 @@ def main() -> None:
             sys.exit(1)
         for skill_name in args.args:
             try:
-                result = disable_skill(skill_name, link_target_dir)
+                result = disable_skill(skill_name, link_target_dirs)
                 if result:
                     print(f"Link removed: {skill_name}")
                 else:
@@ -180,7 +180,7 @@ def main() -> None:
 
     # --- linked ---
     elif sub == "linked":
-        links = linked_skills(link_target_dir)
+        links = linked_skills(link_target_dirs)
         if not links:
             print("No linked skills.")
         else:

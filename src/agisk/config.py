@@ -9,6 +9,7 @@ from typing import Any
 
 DEFAULT_SKILLS_DIRS = ["skills"]
 DEFAULT_LINK_TARGET_DIR = ".agents/skills"
+DEFAULT_LINK_TARGET_DIRS = [".agents/skills"]
 
 
 def _default_config() -> dict[str, Any]:
@@ -69,8 +70,11 @@ def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
     return (base_dir / p).resolve()
 
 
-def get_link_target_dir(config: dict[str, Any] | None = None) -> Path:
+def get_link_target_dirs(config: dict[str, Any] | None = None) -> list[Path]:
     if config is None:
         config = load_config()
-    target = config.get("link_target_dir", DEFAULT_LINK_TARGET_DIR)
-    return (Path.cwd() / Path(target)).resolve()
+    raw_list = config.get("link_target_dirs")
+    if raw_list is not None:
+        return [(Path.cwd() / Path(t)).resolve() for t in raw_list]
+    raw = config.get("link_target_dir", DEFAULT_LINK_TARGET_DIR)
+    return [(Path.cwd() / Path(raw)).resolve()]
