@@ -170,3 +170,21 @@ def test_get_link_target_dirs_list_overrides_string():
     assert get_link_target_dirs(config) == expected
 
 
+def test_get_link_target_dirs_expanduser_string(monkeypatch, tmp_path: Path):
+    """'~' in link_target_dir should be expanded to the user's home."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    config = {"link_target_dir": "~/.agents/skills"}
+    expected = (tmp_path / ".agents" / "skills").resolve()
+    assert get_link_target_dirs(config) == [expected]
+
+
+def test_get_link_target_dirs_expanduser_list(monkeypatch, tmp_path: Path):
+    """'~' in link_target_dirs entries should be expanded to the user's home."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    config = {"link_target_dirs": ["~/.agents/skills", ".agents/pi-skills"]}
+    expected = [
+        (tmp_path / ".agents" / "skills").resolve(),
+        (Path.cwd() / ".agents" / "pi-skills").resolve(),
+    ]
+    assert get_link_target_dirs(config) == expected
+

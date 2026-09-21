@@ -70,11 +70,18 @@ def _resolve_skills_dir(dir_str: str, base_dir: Path) -> Path:
     return (base_dir / p).resolve()
 
 
+def _resolve_link_target_dir(dir_str: str) -> Path:
+    p = Path(dir_str).expanduser()
+    if p.is_absolute():
+        return p.resolve()
+    return (Path.cwd() / p).resolve()
+
+
 def get_link_target_dirs(config: dict[str, Any] | None = None) -> list[Path]:
     if config is None:
         config = load_config()
     raw_list = config.get("link_target_dirs")
     if raw_list is not None:
-        return [(Path.cwd() / Path(t)).resolve() for t in raw_list]
+        return [_resolve_link_target_dir(t) for t in raw_list]
     raw = config.get("link_target_dir", DEFAULT_LINK_TARGET_DIR)
-    return [(Path.cwd() / Path(raw)).resolve()]
+    return [_resolve_link_target_dir(raw)]
