@@ -37,6 +37,18 @@ class TestListSkills:
         assert len(result) == 1
         assert result[0].dir_name == "skill-a"
 
+    def test_ignores_hidden_dirs(self, tmp_skills_dir: Path):
+        (tmp_skills_dir / "skill-a").mkdir()
+        (tmp_skills_dir / ".git").mkdir()
+        result = list_skills([tmp_skills_dir])
+        assert len(result) == 1
+        assert result[0].dir_name == "skill-a"
+
+    def test_only_hidden_dirs(self, tmp_skills_dir: Path):
+        (tmp_skills_dir / ".git").mkdir()
+        (tmp_skills_dir / ".github").mkdir()
+        assert list_skills([tmp_skills_dir]) == []
+
     def test_multiple_dirs_dedup(self, tmp_path: Path):
         d1 = tmp_path / "dir1"
         d2 = tmp_path / "dir2"
@@ -60,6 +72,32 @@ class TestListSkills:
         result = list_skills([d1, d2])
         assert len(result) == 1
         assert result[0].path.parent == d1
+
+    def test_ignores_hidden_dirs_multiple(self, tmp_path: Path):
+        d1 = tmp_path / "dir1"
+        d2 = tmp_path / "dir2"
+        d1.mkdir()
+        d2.mkdir()
+        (d1 / "skill-a").mkdir()
+        (d1 / ".git").mkdir()
+        (d2 / ".git").mkdir()
+        result = list_skills([d1, d2])
+        assert len(result) == 1
+        assert result[0].dir_name == "skill-a"
+
+    def test_find_duplicates_ignores_hidden_dirs(self, tmp_path: Path):
+        from agisk.skills import find_duplicates
+
+        d1 = tmp_path / "dir1"
+        d2 = tmp_path / "dir2"
+        d1.mkdir()
+        d2.mkdir()
+        (d1 / "skill-a").mkdir()
+        (d2 / "skill-a").mkdir()
+        (d1 / ".git").mkdir()
+        (d2 / ".git").mkdir()
+        result = find_duplicates([d1, d2])
+        assert result == [("skill-a", [(d1 / "skill-a"), (d2 / "skill-a")])]
 
 
 class TestActiveSkills:

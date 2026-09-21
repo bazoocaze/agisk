@@ -13,7 +13,7 @@ def list_skills(skills_dirs: list[Path]) -> list[Skill]:
         if not d.exists():
             continue
         for p in d.iterdir():
-            if not p.is_dir():
+            if not p.is_dir() or p.name.startswith("."):
                 continue
             if p.name in seen:
                 continue
@@ -141,7 +141,7 @@ def find_duplicates(skills_dirs: list[Path]) -> list[tuple[str, list[Path]]]:
         if not d.exists():
             continue
         for p in d.iterdir():
-            if not p.is_dir():
+            if not p.is_dir() or p.name.startswith("."):
                 continue
             if p.name not in seen:
                 seen[p.name] = []
